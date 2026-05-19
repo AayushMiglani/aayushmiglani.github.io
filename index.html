@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aayush Miglani — Engineering notes</title>
+<meta name="description" content="Engineering notes on distributed systems, observability, and backend platform work by Aayush Miglani." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Aayush Miglani — Engineering notes" />
+<meta property="og:description" content="Engineering notes on distributed systems, observability, and backend platform work." />
+<meta property="og:url" content="https://aayushmiglani.github.io/" />
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --border: #d0d7de;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+  }
+  .container {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 80px 24px 96px;
+  }
+  header.site-header {
+    margin-bottom: 56px;
+  }
+  header.site-header h1 {
+    font-size: 1.8rem;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  header.site-header .tagline {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0 0 12px;
+  }
+  header.site-header .links {
+    font-size: 0.92rem;
+    color: var(--muted);
+  }
+  header.site-header .links a {
+    color: var(--accent);
+    text-decoration: none;
+    margin-right: 16px;
+  }
+  header.site-header .links a:hover { text-decoration: underline; }
+
+  h2.section-heading {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+  }
+
+  ul.posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  ul.posts li {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 0;
+  }
+  ul.posts li:last-child { border-bottom: none; }
+  ul.posts a.title {
+    color: var(--fg);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.15rem;
+    display: block;
+  }
+  ul.posts a.title:hover { color: var(--accent); }
+  ul.posts .meta {
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 4px;
+  }
+  ul.posts .summary {
+    margin-top: 8px;
+    color: var(--fg);
+    font-size: 0.96rem;
+    line-height: 1.55;
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .container { padding: 48px 18px 64px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="site-header">
+  <h1>Aayush Miglani</h1>
+  <p class="tagline">Engineering notes on distributed systems, observability, and backend platform work.</p>
+  <p class="links">
+    <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">GitHub</a>
+  </p>
+</header>
+
+<h2 class="section-heading">Writing</h2>
+<ul class="posts">
+  <li>
+    <a class="title" href="/posts/correlation-id-spring-boot/">Tracing Requests Across Spring Boot Microservices with a Correlation ID</a>
+    <div class="meta">10 min read · Spring Boot · Java · Observability</div>
+    <p class="summary">
+      A practical guide to stamping every log line with a single ID that survives the journey from your
+      API gateway, through every downstream service, and into your error tracker — using nothing but
+      SLF4J's MDC, a servlet filter, a Feign interceptor, and Log4J2.
+    </p>
+  </li>
+</ul>
+
+<footer>
+  <p>
+    Source for this site is on <a href="https://github.com/AayushMiglani/aayushmiglani.github.io" target="_blank" rel="noopener">GitHub</a>.
+    Posts are released under MIT — copy what's useful.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

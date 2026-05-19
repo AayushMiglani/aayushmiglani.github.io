@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tracing Requests Across Spring Boot Microservices with a Correlation ID — Aayush Miglani</title>
+<meta name="description" content="A practical guide to stamping every log line in a Spring Boot fleet with a single correlation ID — using SLF4J MDC, a servlet filter, a Feign interceptor, and Log4J2." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/posts/correlation-id-spring-boot/" />
+
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Tracing Requests Across Spring Boot Microservices with a Correlation ID" />
+<meta property="og:description" content="A practical guide to stamping every log line in a Spring Boot fleet with a single correlation ID." />
+<meta property="og:url" content="https://aayushmiglani.github.io/posts/correlation-id-spring-boot/" />
+<meta property="og:site_name" content="Aayush Miglani" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Tracing Requests Across Spring Boot Microservices with a Correlation ID" />
+<meta name="twitter:description" content="A practical guide to stamping every log line in a Spring Boot fleet with a single correlation ID." />
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --callout-bg: #fff8c5;
+    --callout-border: #d4a72c;
+    --warn-bg: #ffebe9;
+    --warn-border: #ff8182;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+  header.article-header { margin-bottom: 40px; }
+  header.article-header h1 {
+    font-size: 2.4rem;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  header.article-header .lede {
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .byline {
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  h2 {
+    font-size: 1.6rem;
+    margin: 56px 0 16px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1.2rem;
+    margin: 36px 0 12px;
+    font-weight: 700;
+  }
+  p { margin: 0 0 20px; }
+  ul, ol { margin: 0 0 20px; padding-left: 28px; }
+  li { margin: 6px 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    color: var(--fg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.82em;
+  }
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 16px 0 24px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--fg);
+    margin: 24px 0;
+    padding: 14px 20px;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--callout-border);
+    background: var(--callout-bg);
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 24px 0;
+    font-size: 0.95em;
+    font-style: normal;
+  }
+  .callout.warn {
+    border-left-color: var(--warn-border);
+    background: var(--warn-bg);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .flow {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.45;
+    margin: 24px 0;
+  }
+  hr {
+    border: none;
+    text-align: center;
+    margin: 40px 0;
+  }
+  hr::before {
+    content: "· · ·";
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    font-size: 1.1rem;
+  }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { text-decoration: none; }
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .container { padding: 32px 18px 64px; }
+    header.article-header h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav style="margin-bottom: 32px; font-size: 0.9rem;">
+  <a href="/" style="color: var(--muted); text-decoration: none;">← All posts</a>
+</nav>
+
+<header class="article-header">
+  <h1>Tracing Requests Across Spring Boot Microservices with a Correlation ID</h1>
+  <p class="lede">
+    A practical guide to stamping every log line with a single ID that survives the journey from your
+    API gateway, through every downstream service, and into your error tracker — using nothing but
+    SLF4J's MDC, a servlet filter, a Feign interceptor, and Log4J2.
+  </p>
+  <div class="byline">
+    <strong>10 min read</strong> · Spring Boot · Java · Observability · Distributed systems
+  </div>
+</header>
+
+<section>
+  <h2>The problem with distributed logs</h2>
+  <p>
+    A modern backend is rarely one application. A typical request enters through an API gateway, fans out to
+    half a dozen downstream services, touches caches and databases, calls a few third-party APIs, and
+    eventually produces a response. Each of those hops writes its own log lines into its own log stream.
+  </p>
+  <p>
+    When something goes wrong — a 500 response, a duplicated charge, a missing webhook — finding the
+    trail of log lines that belongs to <em>that one request</em> is the painful part. You can grep for the
+    user ID and get back a thousand lines from twenty unrelated requests. You can grep for the timestamp
+    and find that twelve other things happened in the same millisecond. Without a single, shared
+    identifier on every line, you are reconstructing the request from circumstantial evidence.
+  </p>
+  <p>
+    The fix is a <strong>correlation ID</strong>: one identifier, generated at the edge, attached to every
+    log line, propagated to every downstream service, and visible in every Sentry/Bugsnag/Datadog event.
+    With it, debugging a multi-service request is a single search.
+  </p>
+
+  <blockquote>
+    <p>
+      <strong>What you'll build.</strong> A self-contained correlation-ID layer for any Spring Boot service:
+      a filter that mints or accepts an ID per request, a Feign interceptor that forwards it on outbound
+      calls, a Log4J2 configuration that prints it in every log line, and AOP advices that keep it alive
+      across <code>@Scheduled</code> and <code>@Async</code> boundaries.
+    </p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>How it works — the 30-second version</h2>
+  <p>
+    The mechanism rests on three Spring Boot concepts working together:
+  </p>
+  <ol>
+    <li>
+      <strong>MDC (Mapped Diagnostic Context)</strong> is a thread-local key/value store provided by SLF4J.
+      Whatever you put into MDC at the start of a request, every log statement on that thread can read
+      back — without the caller ever knowing the value is there.
+    </li>
+    <li>
+      <strong>A servlet filter</strong> intercepts every incoming HTTP request. If the request carries a
+      correlation ID header, the filter copies it into MDC; otherwise it mints a fresh UUID. In a
+      <code>finally</code> block, it cleans MDC up so the thread is ready for the next request.
+    </li>
+    <li>
+      <strong>A Feign request interceptor</strong> runs on every outbound HTTP call your service makes.
+      It pulls the current correlation ID out of the request context and attaches it as a header on the
+      outbound call, so the downstream service sees the same ID and reuses it.
+    </li>
+  </ol>
+  <p>
+    The diagram below shows the full lifecycle of an ID as a request crosses two services:
+  </p>
+  <div class="flow">                ┌──────────────────────────────────────────────────────┐
+                │                       Service A                      │
+  HTTP request  │                                                      │
+  ───────────▶  │  Filter ──▶ DispatcherServlet ──▶ Controller         │
+                │     │                              │                 │
+                │     │ MDC.put(requestId)           │ Outbound call   │
+                │     │ Sentry.setTag(...)           ▼                 │
+                │     │                       Feign interceptor:       │
+                │     │                       X-Request-ID: <id>       │
+                │     │                              │                 │
+                └─────┼──────────────────────────────┼─────────────────┘
+                      │                              │
+                      ▼                              ▼
+                Logs tagged              ┌──────────────────────────────┐
+                with requestId           │          Service B           │
+                                         │                              │
+                                         │   Filter reads X-Request-ID  │
+                                         │   ──▶ same requestId in MDC  │
+                                         └──────────────────────────────┘</div>
+</section>
+
+<section>
+  <h2>Step 1 — Choose Log4J2 over Logback</h2>
+  <p>
+    Spring Boot ships with Logback by default, and Logback works fine for MDC interpolation. But
+    Log4J2 is significantly easier to customise — pattern layouts, async appenders, structured fields,
+    and the Sentry appender all integrate with one or two lines of XML rather than a programmatic configurator.
+    For most production teams, the switch is worth making once and forgetting about.
+  </p>
+  <p>To make the swap, exclude the default logging starter and add Log4J2:</p>
+
+<pre><code>// build.gradle
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+}
+
+configurations {
+    all {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
+}</code></pre>
+
+  <p>Or, for Maven users:</p>
+
+<pre><code>&lt;!-- pom.xml --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-web&lt;/artifactId&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter&lt;/artifactId&gt;
+    &lt;exclusions&gt;
+        &lt;exclusion&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-logging&lt;/artifactId&gt;
+        &lt;/exclusion&gt;
+    &lt;/exclusions&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-log4j2&lt;/artifactId&gt;
+&lt;/dependency&gt;</code></pre>
+</section>
+
+<section>
+  <h2>Step 2 — Write the inbound filter</h2>
+  <p>
+    The filter is the heart of the system. It reads the incoming <code>X-Request-ID</code> header (using whichever
+    header name your organisation has standardised on), generates a new UUID if none is present, places the
+    value in MDC under a stable key, and — critically — removes it in a <code>finally</code> block so the
+    thread doesn't carry stale state into the next request.
+  </p>
+  <p>
+    Extending <code>OncePerRequestFilter</code> from Spring is the simplest path: it guarantees the filter
+    runs exactly once per request even when the dispatcher forwards internally.
+  </p>
+
+<pre><code>@Component
+@Slf4j
+@Order(4)
+public class CorrelationIdFilter extends OncePerRequestFilter {
+
+    private static final String REQUEST_ID_HEADER = "X-Request-ID";
+    private static final String MDC_KEY = "correlationId";
+    private static final String RESPONSE_HEADER = "X-Correlation-Id";
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain chain) throws ServletException, IOException {
+        String correlationId = extractOrGenerate(request);
+        MDC.put(MDC_KEY, correlationId);
+        response.addHeader(RESPONSE_HEADER, correlationId);
+
+        // Optional: attach to error-tracking scope so exceptions carry the ID.
+        Sentry.configureScope(scope -&gt; scope.setTag("request_id", correlationId));
+
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove(MDC_KEY);
+        }
+    }
+
+    private String extractOrGenerate(HttpServletRequest request) {
+        String header = request.getHeader(REQUEST_ID_HEADER);
+        if (StringUtils.hasText(header)) {
+            return header;
+        }
+        return UUID.randomUUID().toString().toUpperCase().replace("-", "");
+    }
+
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
+}</code></pre>
+
+  <p>A few details worth understanding:</p>
+  <ul>
+    <li>
+      <strong>Echo the ID on the response.</strong> Adding an <code>X-Correlation-Id</code> response header
+      lets clients (and any upstream gateway) record the ID they were assigned without having to read your logs.
+      When a user reports a problem, they can read the ID off the response — often through browser dev tools — and
+      paste it into your search.
+    </li>
+    <li>
+      <strong>Always clear MDC in a <code>finally</code>.</strong> Servlet containers reuse worker threads. A
+      missing <code>MDC.remove</code> means the next request on the same thread will inherit the previous
+      request's ID and your logs will lie to you in the worst possible way.
+    </li>
+    <li>
+      <strong>Use <code>@Order</code> with intent.</strong> Filter order matters. The correlation-ID filter should
+      run <em>before</em> any filter that might log (authentication, request logging, exception translation), so
+      that those filters' log lines also carry the ID.
+    </li>
+  </ul>
+</section>
+
+<section>
+  <h2>Step 3 — Forward the ID on outbound calls</h2>
+  <p>
+    A correlation ID is only useful if the downstream service sees it. With OpenFeign (the most common HTTP
+    client in Spring Boot microservices) this is a one-class job: implement <code>RequestInterceptor</code>,
+    register it as a bean, and Feign will apply it to every outbound request.
+  </p>
+
+<pre><code>@Component
+public class FeignCorrelationIdInterceptor implements RequestInterceptor {
+
+    private static final String REQUEST_ID_HEADER = "X-Request-ID";
+    private static final String MDC_KEY = "correlationId";
+
+    @Override
+    public void apply(RequestTemplate template) {
+        String correlationId = MDC.get(MDC_KEY);
+        if (correlationId != null) {
+            template.header(REQUEST_ID_HEADER, correlationId);
+        }
+    }
+}</code></pre>
+
+  <p>
+    Reading from MDC rather than from <code>RequestContextHolder</code> matters: it means the interceptor
+    works the same way whether the outbound call originates from a controller, a scheduled job, an async
+    dispatch, or a deeply nested service method. As long as MDC has the ID, the header gets attached.
+  </p>
+
+  <div class="callout">
+    <strong>Using RestTemplate or WebClient?</strong>
+    The same idea applies — register a <code>ClientHttpRequestInterceptor</code> (RestTemplate) or an
+    <code>ExchangeFilterFunction</code> (WebClient) that reads from MDC and adds the header. The pattern is identical.
+  </div>
+</section>
+
+<section>
+  <h2>Step 4 — Make the ID visible in every log line</h2>
+  <p>
+    With the filter and interceptor in place, the only thing missing is to render the MDC value in your log
+    output. Log4J2 reads MDC entries via the <code>%X{key}</code> pattern token:
+  </p>
+
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;Configuration status="WARN"&gt;
+    &lt;Properties&gt;
+        &lt;Property name="LOG_PATTERN"&gt;
+            %d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %-40.40c{1.} : %X{correlationId} - %m%n
+        &lt;/Property&gt;
+    &lt;/Properties&gt;
+    &lt;Appenders&gt;
+        &lt;Console name="Console" target="SYSTEM_OUT"&gt;
+            &lt;PatternLayout pattern="${LOG_PATTERN}"/&gt;
+        &lt;/Console&gt;
+    &lt;/Appenders&gt;
+    &lt;Loggers&gt;
+        &lt;Root level="info"&gt;
+            &lt;AppenderRef ref="Console"/&gt;
+        &lt;/Root&gt;
+    &lt;/Loggers&gt;
+&lt;/Configuration&gt;</code></pre>
+
+  <p>
+    Save this as <code>src/main/resources/log4j2-spring.xml</code> and Spring Boot will pick it up automatically.
+    Any log line emitted on a thread that has <code>correlationId</code> in MDC will now include it inline.
+  </p>
+
+  <p>A sample log line from a fully wired service looks like:</p>
+
+<pre><code>2025-01-14 11:14:02.118  INFO [http-nio-8080-exec-3] c.e.s.controller.OrderController : B3F1A9C24E9B4D6E8F7A12C0D5E61234 - order-received | userId=98421
+2025-01-14 11:14:02.245  INFO [http-nio-8081-exec-1] c.e.s.service.PaymentService     : B3F1A9C24E9B4D6E8F7A12C0D5E61234 - payment-authorised | userId=98421 | amount=499
+2025-01-14 11:14:02.391  INFO [http-nio-8082-exec-2] c.e.s.service.NotificationService: B3F1A9C24E9B4D6E8F7A12C0D5E61234 - email-queued | userId=98421</code></pre>
+
+  <p>
+    Three services, three different threads, one ID. Searching for
+    <code>B3F1A9C24E9B4D6E8F7A12C0D5E61234</code> in your log aggregator returns the complete picture of the request.
+  </p>
+</section>
+
+<section>
+  <h2>Step 5 — Don't lose the ID across thread boundaries</h2>
+  <p>
+    Here is where most correlation-ID implementations quietly fall apart. MDC is thread-local. As soon as
+    your code crosses a thread boundary — a <code>@Scheduled</code> job runs on a scheduler thread, a
+    <code>@Async</code> method gets handed off to an executor, a reactive operator switches schedulers —
+    the MDC value is gone.
+  </p>
+  <p>There are two complementary fixes; use both.</p>
+
+  <h3>5a. Task decorators for executor pools</h3>
+  <p>
+    Spring's <code>ThreadPoolTaskExecutor</code> accepts a <code>TaskDecorator</code> that wraps every task
+    submitted to the pool. The decorator captures MDC on the submitting thread and restores it on the worker
+    thread:
+  </p>
+
+<pre><code>public class MdcTaskDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable runnable) {
+        Map&lt;String, String&gt; context = MDC.getCopyOfContextMap();
+        return () -&gt; {
+            Map&lt;String, String&gt; previous = MDC.getCopyOfContextMap();
+            if (context != null) {
+                MDC.setContextMap(context);
+            }
+            try {
+                runnable.run();
+            } finally {
+                if (previous != null) {
+                    MDC.setContextMap(previous);
+                } else {
+                    MDC.clear();
+                }
+            }
+        };
+    }
+}
+
+@Configuration
+public class AsyncConfig {
+    @Bean
+    public ThreadPoolTaskExecutor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setTaskDecorator(new MdcTaskDecorator());
+        executor.setCorePoolSize(8);
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+
+  <p>
+    This single decorator covers all <code>@Async</code> calls and any task you submit to the pool directly.
+    Now an async dispatch genuinely behaves as a continuation of the originating request, log-wise.
+  </p>
+
+  <h3>5b. AOP advices for @Scheduled jobs</h3>
+  <p>
+    Scheduled jobs are different — they have no originating request, so there is nothing to inherit. They
+    need a <em>fresh</em> ID per tick, so each invocation of the job is its own searchable unit:
+  </p>
+
+<pre><code>@Component
+@Aspect
+public class ScheduledCorrelationAspect {
+
+    private static final String MDC_KEY = "correlationId";
+
+    @Around("@annotation(scheduled)")
+    public Object aroundScheduled(ProceedingJoinPoint pjp, Scheduled scheduled) throws Throwable {
+        String correlationId = UUID.randomUUID().toString().toUpperCase().replace("-", "");
+        MDC.put(MDC_KEY, correlationId);
+        try {
+            return pjp.proceed();
+        } finally {
+            MDC.remove(MDC_KEY);
+        }
+    }
+}</code></pre>
+
+  <p>
+    With both pieces in place — task decorator + scheduled aspect — every line of logging in your service
+    carries a correlation ID, regardless of how the work was triggered.
+  </p>
+
+  <div class="callout warn">
+    <strong>The trap most teams hit</strong>
+    A correlation-ID layer that only covers controllers will look perfect in dev and silently fail in production
+    the moment your service does anything async. If your service has any <code>@Async</code> or
+    <code>@Scheduled</code> code, treat the task decorator as part of the minimum viable implementation, not a follow-up.
+  </div>
+</section>
+
+<section>
+  <h2>Searching for an ID</h2>
+  <p>
+    Once IDs are flowing, the operational payoff is immediate. Any log aggregator that supports substring search
+    becomes a distributed-tracing tool. A few examples:
+  </p>
+
+  <h3>AWS CloudWatch Logs Insights</h3>
+<pre><code>fields @timestamp, @message, @logStream, @log
+| filter @message like 'B3F1A9C24E9B4D6E8F7A12C0D5E61234'
+| sort @timestamp asc
+| limit 1000</code></pre>
+
+  <h3>Elasticsearch / Kibana / Loki</h3>
+<pre><code>message:"B3F1A9C24E9B4D6E8F7A12C0D5E61234"</code></pre>
+
+  <h3>Sentry / Bugsnag</h3>
+  <p>
+    Because the filter binds the ID to the error-tracker's scope as a tag, every captured exception arrives
+    pre-tagged. Filter by <code>request_id:&lt;id&gt;</code> to see every related event, or click through from a
+    log line directly to the Sentry issue.
+  </p>
+</section>
+
+<section>
+  <h2>Where to take this next</h2>
+  <p>
+    The implementation in this article is deliberately minimal — it covers 95% of the operational debugging
+    cases for a small or mid-sized fleet of services. If you want to grow beyond it, three natural next steps are:
+  </p>
+  <ol>
+    <li>
+      <strong>Switch to structured (JSON) logging.</strong> Once log lines are JSON, the correlation ID
+      becomes a first-class indexed field rather than a substring match. Aggregator queries get cheaper and
+      faster, and you can filter on combinations like <code>correlationId=X AND level=ERROR</code> without
+      brittle regex.
+    </li>
+    <li>
+      <strong>Adopt W3C Trace Context.</strong> A custom <code>X-Request-ID</code> header is fine within one
+      team, but if you want to interop with anything OpenTelemetry-aware — Datadog, Honeycomb, Tempo, Jaeger —
+      use the standard <code>traceparent</code> header instead. Your filter can read either header and the
+      conversion is mechanical.
+    </li>
+    <li>
+      <strong>Move to full distributed tracing.</strong> Correlation IDs answer "what happened?" Distributed
+      tracing (OpenTelemetry + a backend like Tempo or Honeycomb) also answers "where did it spend its time,
+      and why?" The correlation-ID work here is a stepping stone, not a competitor.
+    </li>
+  </ol>
+</section>
+
+<hr/>
+
+<section>
+  <h2>Recap</h2>
+  <p>
+    A correlation ID is one of the highest-leverage observability primitives you can add to a Spring Boot
+    fleet — a few hundred lines of code that turn cross-service debugging from archaeology into a single
+    search. The full recipe:
+  </p>
+  <ol>
+    <li>Use Log4J2 and put <code>%X{correlationId}</code> in your pattern layout.</li>
+    <li>Add a <code>OncePerRequestFilter</code> that reads <code>X-Request-ID</code> or mints a UUID, puts it in MDC, echoes it on the response, and cleans up in a <code>finally</code>.</li>
+    <li>Add a <code>RequestInterceptor</code> that reads the ID from MDC and forwards it on every outbound Feign call.</li>
+    <li>Install an <code>MdcTaskDecorator</code> on every <code>ThreadPoolTaskExecutor</code> so <code>@Async</code> calls keep the ID.</li>
+    <li>Add an AOP advice that mints a fresh ID for every <code>@Scheduled</code> tick.</li>
+    <li>Bind the ID to your error tracker's scope so exceptions arrive pre-tagged.</li>
+  </ol>
+  <p>
+    Ship that, and the next time something breaks in production at 2 a.m., you'll spend the call reading the
+    one log search that matters — not stitching log lines back together by hand.
+  </p>
+</section>
+
+<footer>
+  <p>
+    Found this useful? The same pattern works for any thread-local request context — auth tokens, tenant IDs,
+    feature flags. If you want to write about any of those, the structure of this article (filter +
+    interceptor + log pattern + thread-boundary plumbing) is a good template to crib from.
+  </p>
+  <p>
+    <strong>Code:</strong> <a href="https://github.com/AayushMiglani/correlation-id-spring-boot" target="_blank" rel="noopener">github.com/AayushMiglani/correlation-id-spring-boot</a><br/>
+    <strong>Author:</strong> <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">Aayush Miglani</a> ·
+    <a href="/">aayushmiglani.github.io</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
