@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aayush Miglani — Resume</title>
+<meta name="description" content="Resume of Aayush Miglani — Backend Engineer working on payments, rewards, and observability at SalarySe." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/resume/" />
+
+<meta property="og:type" content="profile" />
+<meta property="og:title" content="Aayush Miglani — Resume" />
+<meta property="og:description" content="Backend Engineer — payments, rewards, observability." />
+<meta property="og:url" content="https://aayushmiglani.github.io/resume/" />
+<meta property="og:site_name" content="Aayush Miglani" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Aayush Miglani — Resume" />
+<meta name="twitter:description" content="Backend Engineer — payments, rewards, observability." />
+
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --border: #d0d7de;
+    --soft: #f6f8fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    font-size: 18px;
+  }
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  nav.top {
+    margin-bottom: 32px;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  nav.top a.back {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  nav.top a.back:hover { color: var(--accent); }
+  a.download {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  a.download:hover { background: #0860c7; }
+
+  header.resume-header { margin-bottom: 40px; }
+  header.resume-header h1 {
+    font-size: 2rem;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  header.resume-header .headline {
+    color: var(--muted);
+    font-style: italic;
+    margin: 0 0 12px;
+    font-size: 1.05rem;
+  }
+  header.resume-header .contact {
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  header.resume-header .contact a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  header.resume-header .contact a:hover { text-decoration: underline; }
+  header.resume-header .contact .sep {
+    margin: 0 8px;
+    color: var(--border);
+  }
+
+  h2.section-heading {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 36px 0 14px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-weight: 600;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .role { margin-bottom: 22px; }
+  .role:last-child { margin-bottom: 0; }
+  .role-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 2px;
+  }
+  .role-head .left { font-weight: 600; font-size: 1.02rem; }
+  .role-head .left .org { color: var(--fg); }
+  .role-head .left .sep { color: var(--muted); font-weight: 400; margin: 0 6px; }
+  .role-head .left .title { color: var(--fg); font-weight: 400; }
+  .role-head .right {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+  }
+  .role .place {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 0 0 8px;
+  }
+  .role ul {
+    margin: 6px 0 0;
+    padding-left: 22px;
+  }
+  .role li { margin: 4px 0; line-height: 1.55; }
+  .role li strong { font-weight: 600; }
+
+  .project { margin-bottom: 18px; }
+  .project:last-child { margin-bottom: 0; }
+  .project-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .project-head .name { font-weight: 600; font-size: 1.02rem; }
+  .project-head .meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .project p { margin: 4px 0 0; line-height: 1.55; }
+
+  .skills-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    row-gap: 8px;
+    column-gap: 16px;
+    font-size: 0.96rem;
+  }
+  .skills-grid .label {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 0.82rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding-top: 2px;
+  }
+
+  .edu-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 2px;
+  }
+  .edu-head .school { font-weight: 600; }
+  .edu-head .right {
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+  }
+  .edu-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--fg);
+  }
+  .edu-line .gpa { color: var(--muted); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 0.9rem; }
+  .courses { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+
+  ul.achievements { margin: 6px 0 0; padding-left: 22px; }
+  ul.achievements li { margin: 4px 0; line-height: 1.55; }
+
+  a { color: var(--accent); }
+
+  footer {
+    margin-top: 56px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .container { padding: 32px 18px 64px; }
+    header.resume-header h1 { font-size: 1.6rem; }
+    .role-head, .project-head, .edu-head { flex-direction: column; gap: 0; }
+    .role-head .right, .project-head .meta, .edu-head .right { font-size: 0.8rem; }
+    .skills-grid { grid-template-columns: 1fr; row-gap: 12px; }
+    .skills-grid .label { padding-top: 0; }
+  }
+
+  @media print {
+    @page { size: A4; margin: 14mm 16mm; }
+    body {
+      font-size: 10.5pt;
+      line-height: 1.4;
+      color: #000;
+      background: #fff;
+    }
+    .container {
+      max-width: none;
+      padding: 0;
+      margin: 0;
+    }
+    nav.top, footer { display: none !important; }
+    a, a:visited { color: #000; text-decoration: none; }
+    header.resume-header { margin-bottom: 14pt; }
+    header.resume-header h1 { font-size: 18pt; margin-bottom: 2pt; }
+    header.resume-header .headline { font-size: 11pt; margin-bottom: 4pt; }
+    header.resume-header .contact { font-size: 9.5pt; color: #000; }
+    header.resume-header .contact .sep { color: #888; }
+    h2.section-heading {
+      font-size: 9pt;
+      margin: 14pt 0 6pt;
+      color: #000;
+      border-bottom: 0.5pt solid #000;
+      padding-bottom: 2pt;
+    }
+    .role, .project { margin-bottom: 8pt; page-break-inside: avoid; }
+    .role-head .left, .project-head .name, .edu-head .school { font-size: 10.5pt; }
+    .role-head .right, .project-head .meta, .edu-head .right { color: #000; font-size: 9pt; }
+    .role .place { color: #333; font-size: 9pt; margin-bottom: 3pt; }
+    .role ul, ul.achievements { padding-left: 16pt; margin-top: 2pt; }
+    .role li, ul.achievements li { margin: 1pt 0; line-height: 1.35; }
+    .skills-grid { font-size: 10pt; row-gap: 3pt; }
+    .skills-grid .label { color: #000; font-size: 8.5pt; }
+    .courses { color: #333; font-size: 9pt; }
+    .edu-line .gpa { color: #000; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav class="top">
+  <a class="back" href="/">← Back to site</a>
+  <a class="download" href="resume.pdf" download>Download PDF</a>
+</nav>
+
+<header class="resume-header">
+  <h1>Aayush Miglani</h1>
+  <p class="headline">Backend Engineer — payments, rewards, observability.</p>
+  <p class="contact">
+    Gurugram, India
+    <span class="sep">·</span>
+    <a href="https://www.linkedin.com/in/aayushmiglani/" target="_blank" rel="noopener">linkedin.com/in/aayushmiglani</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">github.com/AayushMiglani</a>
+    <span class="sep">·</span>
+    <a href="https://aayushmiglani.github.io/" target="_blank" rel="noopener">aayushmiglani.github.io</a>
+  </p>
+</header>
+
+<section>
+  <h2 class="section-heading">Experience</h2>
+
+  <div class="role">
+    <div class="role-head">
+      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineer</span></div>
+      <div class="right">Jul 2024 — Present</div>
+    </div>
+    <p class="place">Gurugram, India</p>
+    <ul>
+      <li>Designed a high-scale real-time UPI payment infrastructure processing <strong>INR 1B+</strong> in monthly transaction value for <strong>200,000+ users</strong>.</li>
+      <li>Developed a comprehensive Rewards system handling <strong>INR 10M+</strong> in monthly transaction volume, enabling seamless credit accumulation and redemption.</li>
+      <li>Built a Gift Card marketplace with integrations for <strong>200+ brands</strong>, driving <strong>INR 5M+</strong> in monthly purchases; implemented redemption logic for both cash transfers and in-app wallet usage.</li>
+      <li>Engineered a credit report parsing engine in Java (Regex + Jackson ObjectMapper) to extract key financial parameters, feeding a business rule engine that automates product offering decisions.</li>
+      <li>Launched an in-app Help &amp; Support ticketing system processing <strong>2,000+ monthly tickets</strong>, streamlining issue resolution for the customer support team.</li>
+    </ul>
+  </div>
+
+  <div class="role">
+    <div class="role-head">
+      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineering Intern</span></div>
+      <div class="right">Jan 2024 — Jun 2024</div>
+    </div>
+    <p class="place">Gurugram, India</p>
+    <ul>
+      <li>Implemented distributed tracing across microservices using Spring Boot MDC and unique correlation IDs minted at the API gateway.</li>
+      <li>Integrated Sentry for backend error tracking, establishing the standard monitoring protocol now adopted by the entire backend engineering team.</li>
+      <li>Built central operational dashboards in Retool, used daily by the <strong>10-member Customer Support team</strong>, Operations, and Product to manage critical workflows.</li>
+    </ul>
+  </div>
+
+  <div class="role">
+    <div class="role-head">
+      <div class="left"><span class="org">BITS Pilani, Goa Campus</span><span class="sep">·</span><span class="title">Teaching Assistant</span></div>
+      <div class="right">Aug 2023 — Dec 2023</div>
+    </div>
+    <p class="place">Goa, India</p>
+    <ul>
+      <li>Mentored 60+ students in Digital Image Processing and assisted the professor in conducting and invigilating course evaluation components.</li>
+    </ul>
+  </div>
+
+  <div class="role">
+    <div class="role-head">
+      <div class="left"><span class="org">Finlatics</span><span class="sep">·</span><span class="title">Business Analyst Intern</span></div>
+      <div class="right">Nov 2022 — Dec 2022</div>
+    </div>
+    <p class="place">Remote</p>
+    <ul>
+      <li>Analysed consumer behaviour in Power BI to generate actionable insights for marketing strategies.</li>
+    </ul>
+  </div>
+
+  <div class="role">
+    <div class="role-head">
+      <div class="left"><span class="org">Swecha (NGO)</span><span class="sep">·</span><span class="title">Web Development Intern</span></div>
+      <div class="right">May 2022 — Jul 2022</div>
+    </div>
+    <p class="place">Remote</p>
+    <ul>
+      <li>Developed a live video streaming service with chat capabilities, serving the NGO's education outreach program.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-heading">Projects</h2>
+
+  <div class="project">
+    <div class="project-head">
+      <div class="name">correlation-id-spring-boot</div>
+      <div class="meta">Java · Spring Boot · <a href="https://github.com/AayushMiglani/correlation-id-spring-boot" target="_blank" rel="noopener">repo</a> · <a href="/posts/correlation-id-spring-boot/">writeup</a></div>
+    </div>
+    <p>Reference implementation for stamping every log line in a Spring Boot fleet with a single correlation ID — servlet filter, Feign interceptor, Log4J2 pattern, and AOP advices to survive <code>@Async</code> and <code>@Scheduled</code> boundaries.</p>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-heading">Skills</h2>
+  <div class="skills-grid">
+    <div class="label">Languages</div>
+    <div>Java, Python, JavaScript, SQL</div>
+    <div class="label">Frameworks</div>
+    <div>Spring Boot</div>
+    <div class="label">Cloud / DevOps</div>
+    <div>AWS, Docker, Kubernetes, Sentry, Grafana</div>
+    <div class="label">Databases</div>
+    <div>PostgreSQL, MongoDB</div>
+    <div class="label">Tools</div>
+    <div>IntelliJ IDEA, VS Code, Retool, Appsmith</div>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-heading">Education</h2>
+  <div>
+    <div class="edu-head">
+      <div class="school">BITS Pilani, Goa Campus</div>
+      <div class="right">Aug 2020 — Jun 2024</div>
+    </div>
+    <div class="edu-line">
+      <div>Bachelor of Engineering in Electronics &amp; Communication</div>
+      <div class="gpa">CGPA 8.35 / 10</div>
+    </div>
+    <p class="courses">Relevant coursework: Data Structures &amp; Algorithms, Software Development for Portable Devices, Communication Networks, Probability &amp; Statistics.</p>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-heading">Achievements</h2>
+  <ul class="achievements">
+    <li>Achieved top rank in Mobile Telecommunication Networks among 120 students.</li>
+    <li>Captained the <strong>BITS Goa VALORANT team</strong>, leading the squad to the BOSM 2023 championship.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>
+    Source on <a href="https://github.com/AayushMiglani/aayushmiglani.github.io" target="_blank" rel="noopener">GitHub</a>.
+    Last updated <span id="updated">May 2026</span>.
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
