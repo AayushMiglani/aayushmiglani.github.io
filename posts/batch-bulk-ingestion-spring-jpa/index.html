@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>From 70 Million Inserts to 25 Thousand: Batching Bulk Ingestion in Spring Boot — Aayush Miglani</title>
+<meta name="description" content="How to ingest millions of CSV rows from object storage into PostgreSQL without melting a shared database — streaming parse, bounded batches, the 65,535-parameter limit, cached sequence allocation, and idempotent re-runs." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/" />
+
+<meta property="og:type" content="article" />
+<meta property="og:title" content="From 70 Million Inserts to 25 Thousand: Batching Bulk Ingestion in Spring Boot" />
+<meta property="og:description" content="Ingest millions of CSV rows into PostgreSQL without melting a shared database: streaming parse, bounded batches, the parameter limit, and cached sequences." />
+<meta property="og:url" content="https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/" />
+<meta property="og:site_name" content="Aayush Miglani" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="From 70 Million Inserts to 25 Thousand: Batching Bulk Ingestion in Spring Boot" />
+<meta name="twitter:description" content="Ingest millions of CSV rows into PostgreSQL without melting a shared database: streaming parse, bounded batches, the parameter limit, and cached sequences." />
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --callout-bg: #fff8c5;
+    --callout-border: #d4a72c;
+    --warn-bg: #ffebe9;
+    --warn-border: #ff8182;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+  header.article-header { margin-bottom: 40px; }
+  header.article-header h1 {
+    font-size: 2.4rem;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  header.article-header .lede {
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .byline {
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  h2 {
+    font-size: 1.6rem;
+    margin: 56px 0 16px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1.2rem;
+    margin: 36px 0 12px;
+    font-weight: 700;
+  }
+  p { margin: 0 0 20px; }
+  ul, ol { margin: 0 0 20px; padding-left: 28px; }
+  li { margin: 6px 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    color: var(--fg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.82em;
+  }
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 16px 0 24px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--fg);
+    margin: 24px 0;
+    padding: 14px 20px;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--callout-border);
+    background: var(--callout-bg);
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 24px 0;
+    font-size: 0.95em;
+    font-style: normal;
+  }
+  .callout.warn {
+    border-left-color: var(--warn-border);
+    background: var(--warn-bg);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .flow {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.45;
+    margin: 24px 0;
+  }
+  hr {
+    border: none;
+    text-align: center;
+    margin: 40px 0;
+  }
+  hr::before {
+    content: "· · ·";
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    font-size: 1.1rem;
+  }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { text-decoration: none; }
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .container { padding: 32px 18px 64px; }
+    header.article-header h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav style="margin-bottom: 32px; font-size: 0.9rem;">
+  <a href="/" style="color: var(--muted); text-decoration: none;">← All posts</a>
+</nav>
+
+<header class="article-header">
+  <h1>From 70 Million Inserts to 25 Thousand: Batching Bulk Ingestion in Spring Boot</h1>
+  <p class="lede">
+    A daily export drops a few million rows into object storage and you need them in PostgreSQL by
+    morning. The naive Spring Data version works on your laptop and brings a shared production database
+    to its knees. Here is how to ingest it fast — streaming parse, bounded batches, the parameter limit
+    that picks your batch size for you, cached sequences, and idempotent re-runs.
+  </p>
+  <div class="byline">
+    <strong>12 min read</strong> · Spring Boot · JPA / Hibernate · PostgreSQL · Performance
+  </div>
+</header>
+
+<section>
+  <h2>The naive version, and why it melted the database</h2>
+  <p>
+    The task sounds boring until you see the row counts. Once a day, an upstream system drops a large CSV
+    into object storage — call it <code>items-2026-05-24.csv</code>. Each line is one <em>item</em>, and
+    every item carries up to 24 months of historical snapshots that you also need to persist as child
+    rows. So one file is two tables: a parent <code>item</code> table and a child
+    <code>item_history</code> table with a roughly 1-to-24 fan-out.
+  </p>
+  <p>
+    The first implementation is the one everybody writes. Stream the file, parse each line into a POJO,
+    map it to JPA entities, and save:
+  </p>
+
+<pre><code>// The version that works in dev and dies in prod.
+try (var reader = new InputStreamReader(objectStore.open(key))) {
+    for (CsvLine line : parse(reader)) {
+        Item item = toItem(line);
+        item.setHistory(toHistory(line));   // up to 24 child rows
+        itemRepository.save(item);          // cascades to item_history
+    }
+}</code></pre>
+
+  <p>
+    On a 5,000-row test file this is instant. On the real file it is a catastrophe. Walk through what
+    each <code>save()</code> actually costs:
+  </p>
+  <ul>
+    <li>
+      <strong>One <code>INSERT</code> per row, for both tables.</strong> Three million items become three
+      million parent inserts. The history cascade — up to 24 children each — becomes up to
+      <strong>72 million</strong> child inserts. Hibernate sends them one statement at a time.
+    </li>
+    <li>
+      <strong>One sequence round-trip per insert.</strong> Every entity needs a primary key, and with the
+      default sequence strategy Hibernate issues a <code>SELECT nextval(...)</code> before each insert.
+      That is <em>another</em> ~75 million round-trips, interleaved with the inserts.
+    </li>
+    <li>
+      <strong>An ever-growing persistence context.</strong> Every saved entity stays managed in the
+      Hibernate session. By row two million the session is holding millions of objects, dirty-checking all
+      of them on every flush, and the JVM is fighting the garbage collector.
+    </li>
+  </ul>
+  <p>
+    Add it up: on the order of <strong>150 million</strong> network round-trips to the database for a
+    single file, each one a tiny transaction of work wrapped in real latency. On a dedicated database
+    that is merely slow. On a <em>shared</em> database — one that other services are trying to serve live
+    traffic from — it is an outage. The ingestion pegged database CPU for the duration and every
+    unrelated query slowed down with it.
+  </p>
+
+  <blockquote>
+    <p>
+      <strong>What you'll build.</strong> A bulk-ingestion pipeline for Spring Boot + JPA that turns a
+      multi-million-row file into a few tens of thousands of round-trips: a streaming CSV reader that
+      never buffers the whole file, an accumulator that flushes fixed-size batches, a batch size derived
+      from PostgreSQL's hard limit on bind parameters, sequence allocation that hands out IDs from memory,
+      and an idempotent upsert so a half-finished run is safe to retry.
+    </p>
+  </blockquote>
+
+  <p>The shape we are aiming for:</p>
+
+  <div class="flow">  object storage                  bounded in-memory batch              PostgreSQL
+  ┌────────────┐   stream    ┌──────────────────────────┐   flush   ┌──────────────┐
+  │ items.csv  │ ─ line ───▶ │  [ item, item, item ...] │ ───────▶  │  multi-row   │
+  │ (millions) │   by line   │   ≤ 120 parents          │           │  INSERT      │
+  └────────────┘             │   + their history rows   │           └──────────────┘
+                             └──────────────────────────┘                 │
+                                        │  flush() + clear()               │
+                                        ▼  (drop the batch, free memory)   ▼
+                              session stays small              IDs pre-allocated in
+                              regardless of file size          blocks, not per row</div>
+</section>
+
+<section>
+  <h2>Fix 1 — Stream and parse without buffering the file</h2>
+  <p>
+    The first rule of large-file processing: never hold the whole file in memory. The file lives in object
+    storage (S3, GCS, Azure Blob — the SDK shape is the same), and every SDK gives you an
+    <code>InputStream</code> rather than forcing you to download the object first. Read it as a stream and
+    the JVM only ever holds the bytes it is currently parsing.
+  </p>
+  <p>
+    The parser matters more than people expect. The convenient choice is a binding library that reflects
+    each row straight into an annotated bean. That convenience is expensive at this scale: per-row
+    reflection and a fresh object graph for every line generate enormous allocation pressure. A
+    <strong>streaming, index- or name-based reader</strong> — the kind that hands you one lightweight
+    record at a time and lets you read fields by column name — parses far faster and allocates far less.
+    (In the JVM world, FastCSV is a good example; the principle holds for any low-allocation streaming
+    reader.)
+  </p>
+
+<pre><code>// Stream from object storage, parse lazily, never materialise the file.
+try (InputStream in = objectStore.open(key);
+     CsvReader&lt;NamedCsvRecord&gt; csv = CsvReader.builder()
+             .fieldSeparator(',')
+             .ofNamedCsvRecord(new InputStreamReader(in, UTF_8))) {
+
+    for (NamedCsvRecord row : csv) {
+        // read by column name, not by fragile positional index
+        accumulate(toItem(row));
+    }
+}</code></pre>
+
+  <p>
+    Reading fields by name (<code>row.getField("opened_on")</code>) rather than by position means a
+    reordered or newly-inserted upstream column doesn't silently shift every value by one. Keep the
+    per-field parsing lenient — a blank or malformed optional field should become <code>null</code> and a
+    logged warning, not an exception that aborts a three-million-row run.
+  </p>
+</section>
+
+<section>
+  <h2>Fix 2 — Insert in bounded batches, then forget them</h2>
+  <p>
+    Streaming the input fixes the read side. The write side is still one-insert-at-a-time until you
+    accumulate rows and flush them together. The accumulator is a plain list: append each parsed item;
+    when the list hits the batch size, hand it to the writer and clear it. Don't forget the final partial
+    batch after the loop ends.
+  </p>
+
+<pre><code>private final List&lt;Item&gt; batch = new ArrayList&lt;&gt;();
+
+private void accumulate(Item item) {
+    batch.add(item);
+    if (batch.size() == batchSize) {   // batchSize = 120, see Fix 3
+        ingestDbService.saveBatch(batch);
+        batch.clear();
+    }
+}
+
+// after the stream is exhausted:
+if (!batch.isEmpty()) {
+    ingestDbService.saveBatch(batch);
+}</code></pre>
+
+  <p>
+    For the write itself you have two good options, and this pipeline uses both depending on the table:
+  </p>
+  <ul>
+    <li>
+      <strong>Hibernate JDBC batching</strong> for the parent-and-children object graph. Turn it on and
+      Hibernate groups your inserts into batched <code>PreparedStatement</code> executions instead of one
+      statement per row. The settings that matter:
+<pre><code># application.properties
+spring.jpa.properties.hibernate.jdbc.batch_size=720
+spring.jpa.properties.hibernate.order_inserts=true
+spring.jpa.properties.hibernate.order_updates=true</code></pre>
+      <code>order_inserts</code> is the quiet hero: it reorders pending inserts so all rows for one table
+      are contiguous, which is what lets Hibernate actually fill a batch instead of flushing a batch of
+      one every time the table changes.
+    </li>
+    <li>
+      <strong>A raw multi-row <code>INSERT</code> via <code>JdbcTemplate</code></strong> for simple,
+      flat tables — especially when you want database-side conflict handling (more on that in Fix 5).
+      One statement, many value tuples:
+<pre><code>jdbc.batchUpdate(
+    "INSERT INTO item (external_id, opened_on, status) VALUES (?, ?, ?)",
+    batch, batch.size(),
+    (ps, item) -&gt; {
+        ps.setString(1, item.externalId());
+        ps.setObject(2, item.openedOn());
+        ps.setString(3, item.status());
+    });</code></pre>
+    </li>
+  </ul>
+  <p>
+    Now the critical half of this step. After each batch you must <strong>flush and clear the
+    persistence context</strong>:
+  </p>
+
+<pre><code>@Transactional
+public void saveBatch(List&lt;Item&gt; items) {
+    itemRepository.saveAll(items);   // cascades to item_history
+    entityManager.flush();           // push this batch's SQL to the DB now
+    entityManager.clear();           // detach everything — reset the session
+}</code></pre>
+
+  <p>
+    Without the <code>clear()</code>, every entity you have ever saved stays managed for the whole file.
+    Two things go wrong, both quadratic-feeling: memory climbs until the JVM thrashes, and every
+    <code>flush()</code> re-runs Hibernate's dirty-check across the entire growing set of managed
+    entities. <code>clear()</code> detaches the batch you just wrote so the session size stays flat
+    whether the file has ten thousand rows or ten million.
+  </p>
+
+  <div class="callout warn">
+    <strong>The trap: clear() detaches everything, including things you still hold.</strong>
+    After <code>entityManager.clear()</code>, every entity from that batch is detached — touching a lazy
+    association on one throws <code>LazyInitializationException</code>, and re-saving one inserts a
+    duplicate. Treat a flushed batch as gone. Resolve any IDs or values you need <em>before</em> the
+    clear, and never reach back into the previous batch.
+  </div>
+</section>
+
+<section>
+  <h2>Fix 3 — Size the batch against the 65,535-parameter wall</h2>
+  <p>
+    Why 120? It is not a vibe. PostgreSQL's wire protocol caps a single statement at
+    <strong>65,535 bind parameters</strong> (the count is a 16-bit field). A batched insert binds one
+    parameter per column per row, so the number of rows you can pack into one statement is bounded by:
+  </p>
+
+<pre><code>max_rows_per_statement = 65535 / columns_per_row</code></pre>
+
+  <p>
+    The subtlety is the fan-out. Your batch size is counted in <em>parent</em> items, but each parent
+    drags up to 24 history children, and the children are the table with the most rows in flight. So the
+    binding constraint is the child insert, not the parent:
+  </p>
+
+<pre><code>history rows per batch   = batchSize × 24
+params per history row   ≈ 20 columns
+params in one statement  = batchSize × 24 × 20
+
+solve for the limit:
+  batchSize × 480 ≤ 65535
+  batchSize       ≤ 136</code></pre>
+
+  <p>
+    136 is the ceiling where the worst-case batch would just fit. You do not pick the ceiling — you pick a
+    number under it with headroom for an extra column appearing upstream or a future bump in history
+    depth. <strong>120</strong> is that number: round, comfortably below 136, and it makes the per-batch
+    arithmetic easy to reason about. Exceed the limit and PostgreSQL rejects the statement outright with a
+    <em>"too many parameters"</em> error — and it only triggers on the batches that happen to hit maximum
+    fan-out, so it is exactly the kind of bug that passes every test and fails in production on a Tuesday.
+  </p>
+
+  <div class="callout">
+    <strong>Compute it, don't guess it.</strong>
+    Pin the limit in code as <code>floor(65535 / (maxChildrenPerParent × childColumns))</code> and choose
+    a batch size a margin below it. When someone adds a column or bumps the history window, the formula
+    tells you the new safe ceiling instead of leaving you to rediscover it through an incident.
+  </div>
+</section>
+
+<section>
+  <h2>Fix 4 — Stop asking the database for IDs one row at a time</h2>
+  <p>
+    Batched inserts fix the insert storm but leave the <em>other</em> storm untouched: identifier
+    generation. With a plain sequence strategy, Hibernate fetches the next value from the database before
+    each insert. Batch the inserts all you like — you still pay one round-trip per row just to get a key,
+    and at the child table that is up to 72 million extra calls.
+  </p>
+  <p>
+    The fix is the <strong>pooled sequence optimizer</strong>, controlled by <code>allocationSize</code>.
+    Set it and Hibernate fetches a <em>block</em> of IDs in a single call, then hands them out from memory
+    until the block is exhausted. Tune the allocation to your batch shape and ID generation stops being a
+    bottleneck:
+  </p>
+
+<pre><code>@Entity
+public class Item {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "item_seq")
+    @SequenceGenerator(name = "item_seq", sequenceName = "item_id_seq",
+                       allocationSize = 120)   // one fetch per parent batch
+    private Long id;
+}
+
+@Entity
+public class ItemHistory {
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "item_history_seq")
+    @SequenceGenerator(name = "item_history_seq", sequenceName = "item_history_id_seq",
+                       allocationSize = 720)   // matches hibernate.jdbc.batch_size
+    private Long id;
+}</code></pre>
+
+  <p>
+    The numbers line up deliberately. The parent allocation (120) equals the batch size, so a 120-item
+    batch draws all its parent IDs from one fetched block. The child allocation (720) matches the
+    Hibernate JDBC batch size, so the children for a batch are covered by a handful of fetches instead of
+    thousands. The per-row <code>nextval</code> calls collapse from tens of millions to a few thousand.
+  </p>
+
+  <div class="callout warn">
+    <strong>allocationSize and the database sequence's INCREMENT BY must agree.</strong>
+    The pooled optimizer assumes the underlying sequence increments by <code>allocationSize</code>. If
+    your sequence is <code>INCREMENT BY 1</code> but the entity declares <code>allocationSize = 120</code>,
+    Hibernate's in-memory block overlaps IDs the database will hand out again — duplicate-key violations
+    under concurrency. Define the sequence with the matching increment in your Flyway migration:
+    <code>CREATE SEQUENCE item_id_seq INCREMENT BY 120;</code>
+  </div>
+</section>
+
+<section>
+  <h2>Fix 5 — Make the whole thing re-runnable</h2>
+  <p>
+    A multi-minute job that writes millions of rows <em>will</em> get interrupted — a deploy, a network
+    blip, a pod eviction. When it does, some batches are committed and the rest are not. You need re-running
+    the same file to be safe, and you almost certainly don't want to build a checkpoint/offset system to
+    get there. Idempotent writes give you the same safety for free.
+  </p>
+  <p>
+    For the flat parent table, push conflict handling into the database with a natural unique key. The
+    multi-row <code>INSERT</code> becomes an upsert that silently skips rows that already landed:
+  </p>
+
+<pre><code>INSERT INTO item (external_id, scrub_date, opened_on, status)
+VALUES (?, ?, ?, ?)
+ON CONFLICT (external_id, scrub_date) DO NOTHING</code></pre>
+
+  <p>
+    For the cascade graph, where <code>ON CONFLICT</code> is awkward, fetch the set of keys that already
+    exist for this file <em>once</em> at the start of the run and skip any item whose key is already
+    present:
+  </p>
+
+<pre><code>Set&lt;String&gt; alreadyIngested = itemRepository.findExistingKeys(scrubDate);
+
+for (NamedCsvRecord row : csv) {
+    String key = row.getField("external_id");
+    if (alreadyIngested.contains(key)) continue;   // committed on a prior run
+    accumulate(toItem(row));
+}</code></pre>
+
+  <p>
+    Now the recovery procedure is the entire recovery procedure: <em>run the file again.</em> Committed
+    batches are recognised and skipped; only the un-ingested remainder is written. No offsets, no
+    resume-token table, no partial-state bookkeeping — just inserts that decline to duplicate themselves.
+  </p>
+
+  <h3>A note on triggering and concurrency</h3>
+  <p>
+    Kick the job off behind an endpoint or a queue listener and run it on a background thread
+    (<code>@Async</code>) so the trigger returns immediately. Within one file the stream is read serially —
+    one parse loop, one batch in flight at a time — and each batch commits in its own short transaction.
+    Resist the urge to fan a single file across threads sharing one persistence context;
+    <code>EntityManager</code> is not thread-safe, and the batch-per-transaction model already keeps each
+    unit of work small and recoverable.
+  </p>
+</section>
+
+<section>
+  <h2>The payoff</h2>
+  <p>
+    Stack the fixes up and the cost profile changes by orders of magnitude. For a three-million-item file
+    with up to 24 history rows each:
+  </p>
+
+  <div class="flow">                         naive                         batched
+  parent inserts          3,000,000  statements   →   25,000  batched statements
+  child inserts          ~72,000,000 statements   →   ~100,000 batched statements
+  sequence round-trips   ~75,000,000 calls        →   a few thousand block fetches
+  persistence context    grows to millions        →   flat, ≤ one batch
+  effect on shared DB     CPU pegged, neighbours   →   a brief, polite spike
+                          starved</div>
+
+  <p>
+    The parent table alone drops from three million individual inserts to roughly twenty-five thousand
+    batched ones (<code>3,000,000 / 120</code>). The job went from an event the on-call team dreaded to
+    one that finishes before anyone notices — and, just as importantly, stopped stealing CPU from the live
+    services sharing the database.
+  </p>
+</section>
+
+<section>
+  <h2>Where to take this next</h2>
+  <p>
+    The pipeline above is the high-leverage 90%. Three directions to push it further when you need to:
+  </p>
+  <ol>
+    <li>
+      <strong>Reach for <code>COPY</code> when ORM overhead stops being worth it.</strong> For pure bulk
+      load with no per-row business logic, PostgreSQL's <code>COPY</code> (via the JDBC
+      <code>CopyManager</code>) is dramatically faster than any <code>INSERT</code> — it bypasses the
+      statement planner entirely. The trade-off is that you give up Hibernate's mapping and conflict
+      handling, so it shines for staging-table loads you reconcile afterwards.
+    </li>
+    <li>
+      <strong>Add <code>reWriteBatchedInserts=true</code> to the JDBC URL.</strong> This PostgreSQL driver
+      flag rewrites a batch of single-row inserts into a true multi-row statement on the wire, often a
+      2–3× win on top of Hibernate batching — and it interacts with the parameter limit from Fix 3, so
+      re-check your math when you enable it.
+    </li>
+    <li>
+      <strong>Make ingestion observable.</strong> Emit a counter of rows ingested, a timer per batch, and
+      a gauge for the current file's progress. When a run is slow you want to see <em>which</em> phase —
+      parse, insert, or sequence fetch — rather than guess. Bulk jobs that run unattended need to tell you
+      how they're doing.
+    </li>
+  </ol>
+</section>
+
+<hr/>
+
+<section>
+  <h2>Recap</h2>
+  <p>
+    Bulk ingestion melts shared databases not because the data is large but because the naive approach
+    multiplies every row into several network round-trips. The fix is to amortise those round-trips into
+    batches sized by a hard limit you can compute. The recipe:
+  </p>
+  <ol>
+    <li>Stream the file from object storage and parse it with a low-allocation streaming reader — never buffer the whole file, read fields by name.</li>
+    <li>Accumulate parsed rows into a fixed-size batch; flush each batch, then <code>entityManager.flush()</code> + <code>clear()</code> to keep the persistence context flat.</li>
+    <li>Size the batch from PostgreSQL's 65,535-parameter limit: <code>floor(65535 / (maxChildren × childColumns))</code>, then back off for headroom — that's where 120 comes from.</li>
+    <li>Set <code>allocationSize</code> on your sequence generators (matched to batch and JDBC-batch sizes) so IDs come from in-memory blocks, not a round-trip per row — and match the DB sequence's <code>INCREMENT BY</code>.</li>
+    <li>Make writes idempotent — <code>ON CONFLICT DO NOTHING</code> or a pre-fetched key set — so an interrupted run is fixed by simply re-running the file.</li>
+  </ol>
+  <p>
+    Do that, and a file that used to be a production incident becomes a background job that finishes
+    quietly and leaves the database's other tenants alone.
+  </p>
+</section>
+
+<footer>
+  <p>
+    Found this useful? The same batching discipline applies far beyond CSV — queue-draining workers,
+    backfills, and migrations all win from bounded batches, pooled ID allocation, and idempotent writes.
+    The numbers change; the recipe doesn't.
+  </p>
+  <p>
+    <strong>Author:</strong> <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">Aayush Miglani</a> ·
+    <a href="/">aayushmiglani.github.io</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
