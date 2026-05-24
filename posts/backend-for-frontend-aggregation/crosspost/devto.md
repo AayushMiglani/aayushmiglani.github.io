@@ -1,7 +1,7 @@
 ---
 title: "Composing One Screen From a Dozen Services: A Backend-for-Frontend Pattern"
 published: false
-description: How to build a resilient Backend-for-Frontend that fans out to many services in parallel, assembles a single screen, degrades gracefully on partial failure, and decides what to show each user with a config-driven rules engine.
+description: How to build a resilient Backend-for-Frontend that fans out to many services in parallel, assembles a single screen, degrades gracefully on partial failure, and returns exactly the payload one screen needs.
 tags: springboot, java, microservices, architecture
 canonical_url: https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/
 cover_image:
@@ -9,7 +9,7 @@ cover_image:
 
 > This article is also available on my blog: [aayushmiglani.github.io](https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/)
 
-The home screen of a modern app is not owned by one service — it is a collage of fragments, each owned by a different team. This is how to build the layer that stitches them together: a Backend-for-Frontend that fans out in parallel, survives partial failure, and decides what each user sees with a config-driven rules engine instead of a forest of `if` statements.
+The home screen of a modern app is not owned by one service — it is a collage of fragments, each owned by a different team. This is how to build the layer that stitches them together: a Backend-for-Frontend that fans out in parallel, survives partial failure, and returns exactly the payload one screen needs.
 
 ## The problem: one screen, a dozen owners
 
@@ -19,7 +19,7 @@ The naive way to assemble that screen is to let the client do it: the mobile app
 
 The **Backend-for-Frontend** (BFF) pattern moves that assembly to the server. A single service sits between the app and the fleet. The client makes *one* call — "give me the home screen for this user" — and the BFF does the fan-out, the composition, the filtering, and the shaping, returning exactly the payload the screen needs and nothing more.
 
-> **What we'll build.** A BFF that aggregates many services into one screen response. We'll cover the two-phase pipeline (gather context, then build sections), the concurrency model that makes the fan-out fast, the graceful-degradation strategy that keeps a slow service from taking down the whole screen, and a config-driven targeting engine that decides which content each user is eligible to see.
+> **What we'll build.** A BFF that aggregates many services into one screen response. We'll cover the two-phase pipeline (gather context, then build sections), the concurrency model that makes the fan-out fast, the graceful-degradation strategy that keeps a slow service from taking down the whole screen, and the observability that tells you what each screen actually rendered.
 
 ## The shape of the answer
 
@@ -36,7 +36,7 @@ public record ScreenResponse(
 ) {}
 ```
 
-Each field is produced independently. The profile header comes from the identity service; the banner is chosen by the targeting engine; the recommendations come from a catalog service filtered by eligibility. Some fields are nullable on purpose: if a section has nothing to show — or the service that powers it is unavailable — the field is simply `null`, and the client renders the screen without that region. That single design decision, *nullable sections*, is what makes graceful degradation possible later.
+Each field is produced independently. The profile header comes from the identity service; the banner from a promotions service; the recommendations come from a catalog service. Some fields are nullable on purpose: if a section has nothing to show — or the service that powers it is unavailable — the field is simply `null`, and the client renders the screen without that region. That single design decision, *nullable sections*, is what makes graceful degradation possible later.
 
 ## Two phases: gather, then build
 
@@ -220,121 +220,9 @@ The same decorator should also forward the correlation ID onto outbound HTTP cal
 
 > **Size the pool on purpose.** A screen aggregator's threads spend almost all their time blocked on downstream I/O, not burning CPU. That argues for a pool considerably larger than your core count — and a bounded queue, so that under overload you shed load fast instead of piling up latency. Use a dedicated executor for this work; don't share the framework's default pool with unrelated tasks that have different blocking profiles.
 
-## Deciding what each user sees: a config-driven rules engine
-
-Now the harder half. A builder doesn't just shape data — it has to decide *whether* a section appears and *which variant*. Which banner? Which products are this user eligible for? In what order? The instinct is to encode this in code:
-
-```java
-// the slope you do not want to start down
-if (user.segment().equals("NEW") && user.daysSinceSignup() < 30
-        && appVersion.atLeast("4.2") && !blocklist.contains(user.id())) {
-    return Banner.WELCOME_OFFER;
-} else if (...) {
-    ...
-}
-```
-
-Every targeting change is now a code change, a deploy, and a release. Marketing wants to launch a promotion on Friday; engineering is the bottleneck. Within a quarter this branch is forty cases deep and nobody can say what any given user will see. The way out is to treat targeting as **data, not code**: a rules engine that reads campaign definitions from a table and evaluates them against the request context.
-
-### The campaign model
-
-A campaign is a small, declarative record. Four fields carry the whole idea:
-
-- **Level** — the targeting granularity: an individual `USER`, a `GROUP` they belong to, or a broad `SEGMENT`. Levels are ranked, so a campaign aimed at a specific user beats a campaign aimed at their whole segment.
-- **Value** — the entity the campaign targets at that level (a user id, a group id, a segment name).
-- **Filter conditions** — extra predicates that must *all* hold for the campaign to apply (e.g. "account age under 30 days"). AND semantics.
-- **Rules** — an ordered, priority-keyed map of what to show: priority → list of candidate content. Lower priority number wins; within a tier, the first eligible candidate is chosen.
-
-```java
-public record Campaign(
-    String              identifier,
-    CampaignLevel       level,          // USER > GROUP > SEGMENT
-    String              value,
-    Instant             startsAt,
-    Instant             endsAt,
-    List<String>        filterConditions,
-    Map<Integer, List<String>> rules    // {1: ["A"], 2: ["B:variant", "C"]}
-) {}
-```
-
-### Storing rules without a join table
-
-The `rules` and `filterConditions` fields are variable-shaped — a map of lists, a list of strings. Modelling them as fully normalized child tables would be a lot of JPA ceremony for data that is only ever read and written as a whole. A pragmatic alternative is to serialize them to JSON and store them in a single text/JSONB column, with a JPA `AttributeConverter` doing the translation transparently:
-
-```java
-@Converter
-public class RulesConverter
-        implements AttributeConverter<Map<Integer, List<String>>, String> {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    @Override
-    public String convertToDatabaseColumn(Map<Integer, List<String>> rules) {
-        try { return MAPPER.writeValueAsString(rules); }
-        catch (JsonProcessingException e) {
-            throw new TargetingException("rules-serialize-failed", e);
-        }
-    }
-
-    @Override
-    public Map<Integer, List<String>> convertToEntityAttribute(String json) {
-        try {
-            return MAPPER.readValue(json,
-                new TypeReference<LinkedHashMap<Integer, List<String>>>() {});
-        } catch (IOException e) {
-            throw new TargetingException("rules-deserialize-failed", e);
-        }
-    }
-}
-```
-
-Two details matter here. Deserialize into a `LinkedHashMap` so insertion order survives the round trip — priority ordering is meaningful and you don't want it scrambled. And wrap the Jackson exceptions in a domain-specific exception that carries a greppable reason code, rather than letting a raw `JsonProcessingException` leak out of the persistence layer.
-
-### Evaluation: precedence, conditions, eligibility
-
-With campaigns in the table, choosing content for a user is three steps:
-
-1. **Find candidate campaigns** that are currently active (now between `startsAt` and `endsAt`) and target this user at *some* level — by their id, their group, or their segment.
-2. **Order by precedence** — most specific level first (`USER` over `GROUP` over `SEGMENT`), then most recently created — and pick the first whose filter conditions all pass.
-3. **Walk the rules** in priority order; within each priority tier, return the first candidate the user is actually *eligible* for.
-
-```java
-public List<Content> resolve(ScreenContext ctx) {
-    return activeCampaignsFor(ctx)                       // step 1
-        .stream()
-        .sorted(BY_LEVEL_THEN_RECENCY)                   // step 2
-        .filter(c -> conditionsMatch(c.filterConditions(), ctx))
-        .findFirst()
-        .map(c -> evaluateRules(c, ctx))                 // step 3
-        .orElse(List.of());
-}
-
-private boolean conditionsMatch(List<String> conditions, ScreenContext ctx) {
-    for (String condition : conditions) {               // AND — short-circuit
-        if (!evaluate(condition, ctx)) return false;
-    }
-    return true;
-}
-
-private List<Content> evaluateRules(Campaign campaign, ScreenContext ctx) {
-    return campaign.rules().entrySet().stream()
-        .sorted(Map.Entry.comparingByKey())             // priority order
-        .flatMap(tier -> tier.getValue().stream()
-            .map(ContentRef::parse)
-            .filter(ref -> eligibilityChecker.isEligible(ctx, ref))
-            .findFirst()                                 // first eligible in tier
-            .stream())
-        .toList();
-}
-```
-
-The last piece, the `EligibilityChecker`, is where the rules engine meets reality. A campaign can *offer* a piece of content, but the user must still qualify for it given the live context — they haven't already adopted it, their app version supports it, their account is in the right state. Keeping eligibility in one checker, separate from the campaign-selection logic, means the same rule ("is this user eligible for X") is enforced identically whether X is being chosen by the targeting engine, listed in a catalog, or checked by a standalone endpoint. One source of truth for "can this user see this," many callers.
-
-> **Why this structure earns its keep.** Levels give you precedence (target a VIP user directly without disturbing their segment's campaign). Filter conditions give you slicing (same campaign, narrowed to new accounts). Priority-keyed rules give you fallback (offer A; if they already have it, offer B). And because it's all rows in a table, a targeting change is a config update — reviewable, auditable, and reversible without a deploy.
-
 ## Observability: know what the screen actually showed
 
-A screen this dynamic is opaque unless you measure it. Two families of metrics make it legible. First, *build health* per section — invoked, succeeded, failed — so a downstream degradation shows up as a spike in `section_build_failure{section="recommended"}` long before it shows up in support tickets. Second, *what the user saw*: increment a counter when a section is populated and another when it comes back empty, tagged by the dimensions you target on (segment, group, app version).
+A screen this dynamic is opaque unless you measure it. Two families of metrics make it legible. First, *build health* per section — invoked, succeeded, failed — so a downstream degradation shows up as a spike in `section_build_failure{section="recommended"}` long before it shows up in support tickets. Second, *what the user saw*: increment a counter when a section is populated and another when it comes back empty, tagged by the dimensions you slice by (segment, group, app version).
 
 ```java
 if (section == null || section.isEmpty()) {
@@ -344,13 +232,13 @@ if (section == null || section.isEmpty()) {
 }
 ```
 
-The empty-rate per section is the single most useful number this service emits. A section that is empty for 80% of users is either mis-targeted or pointing at an unhealthy dependency — and you'd never see either from request-level success rates alone, because returning an empty section *is* a successful request.
+The empty-rate per section is the single most useful number this service emits. A section that is empty for 80% of users is either filtering away everything or pointing at an unhealthy dependency — and you'd never see either from request-level success rates alone, because returning an empty section *is* a successful request.
 
 ## Where to take this next
 
 1. **Cache the context, not the response.** Several fragments change slowly (a profile, group membership). Caching those context pieces with a short TTL cuts downstream load dramatically, while still recomputing the cheap, fast-changing parts on every request. Cache the inputs to the decision, not the decision itself.
 2. **Make the time budget adaptive.** A fixed three-second budget is blunt. Track the p99 of each downstream and trip a circuit breaker on the ones that are misbehaving, so a known-bad dependency is skipped immediately rather than waited on every single request.
-3. **Promote rule conditions to a small expression language.** Hand-named conditions ("account age under 30 days") are fine until you have fifty of them. A tiny, sandboxed expression grammar over the context lets non-engineers compose conditions without a new deploy for each one — at the cost of building a safe evaluator, which is real work. Don't reach for it until the hard-coded condition list genuinely hurts.
+3. **Tell the client what's missing, not just what's there.** A null section because a dependency failed is different from a null section because the user genuinely has nothing to show — but both look identical on the wire. Attach lightweight per-section status metadata so the client can render a retry affordance for the former and silently omit the latter, instead of treating every gap the same way.
 
 ## Recap
 
@@ -361,10 +249,9 @@ A Backend-for-Frontend turns a chaotic client-side fan-out into one clean call, 
 3. Put a wall-clock budget on the gather phase and turn every downstream failure into a `null`, not an exception.
 4. Model sections as a `SectionBuilder` strategy, run them in parallel, and isolate each with `.exceptionally()`.
 5. Propagate request context across the thread pool with a `TaskDecorator` so logs and traces survive the fan-out.
-6. Drive "what to show whom" from a config-backed rules engine — levels for precedence, conditions for slicing, priority rules for fallback — not from branching code.
-7. Measure what each section actually rendered; the per-section empty rate is your earliest warning signal.
+6. Measure what each section actually rendered; the per-section empty rate is your earliest warning signal.
 
-Build it this way and the screen stays fast when a dependency is slow, stays up when a dependency is down, and changes what it shows without waiting on a release. The complexity doesn't disappear — it moves to where it belongs: behind one interface, expressed as data, observable from the outside.
+Build it this way and the screen stays fast when a dependency is slow, stays up when a dependency is down, and hands the client exactly the payload it needs. The complexity doesn't disappear — it moves to where it belongs: behind one interface, isolated per section, observable from the outside.
 
 ---
 
