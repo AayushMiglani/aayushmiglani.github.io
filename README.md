@@ -11,8 +11,12 @@ Personal site for engineering writing — built as plain static HTML, served by 
 ├── index.html                              — homepage / post index
 ├── 404.html                                — custom 404
 └── posts/
+    ├── backend-for-frontend-aggregation/
+    │   ├── index.html                      — BFF screen-aggregation post
+    │   └── crosspost/devto.md              — dev.to cross-post (canonical → site)
     └── correlation-id-spring-boot/
-        └── index.html                      — first post
+        ├── index.html                      — correlation-ID post
+        └── crosspost/devto.md              — dev.to cross-post (canonical → site)
 ```
 
 Each post lives at its own clean URL (no `.html` suffix) by being an `index.html` inside a folder.

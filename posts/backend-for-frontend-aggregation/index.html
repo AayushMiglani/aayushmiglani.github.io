@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Composing One Screen From a Dozen Services: A Backend-for-Frontend Pattern — Aayush Miglani</title>
+<meta name="description" content="How to build a resilient Backend-for-Frontend that fans out to many services in parallel, assembles a single screen, degrades gracefully on partial failure, and decides what to show each user with a config-driven rules engine." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/" />
+
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Composing One Screen From a Dozen Services: A Backend-for-Frontend Pattern" />
+<meta property="og:description" content="A resilient BFF that aggregates many services in parallel, degrades gracefully, and targets content with a config-driven rules engine." />
+<meta property="og:url" content="https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/" />
+<meta property="og:site_name" content="Aayush Miglani" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Composing One Screen From a Dozen Services: A Backend-for-Frontend Pattern" />
+<meta name="twitter:description" content="A resilient BFF that aggregates many services in parallel, degrades gracefully, and targets content with a config-driven rules engine." />
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --callout-bg: #fff8c5;
+    --callout-border: #d4a72c;
+    --warn-bg: #ffebe9;
+    --warn-border: #ff8182;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+  header.article-header { margin-bottom: 40px; }
+  header.article-header h1 {
+    font-size: 2.4rem;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  header.article-header .lede {
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .byline {
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  h2 {
+    font-size: 1.6rem;
+    margin: 56px 0 16px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1.2rem;
+    margin: 36px 0 12px;
+    font-weight: 700;
+  }
+  p { margin: 0 0 20px; }
+  ul, ol { margin: 0 0 20px; padding-left: 28px; }
+  li { margin: 6px 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    color: var(--fg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.82em;
+  }
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 16px 0 24px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--fg);
+    margin: 24px 0;
+    padding: 14px 20px;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--callout-border);
+    background: var(--callout-bg);
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 24px 0;
+    font-size: 0.95em;
+    font-style: normal;
+  }
+  .callout.warn {
+    border-left-color: var(--warn-border);
+    background: var(--warn-bg);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .flow {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.45;
+    margin: 24px 0;
+  }
+  hr {
+    border: none;
+    text-align: center;
+    margin: 40px 0;
+  }
+  hr::before {
+    content: "· · ·";
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    font-size: 1.1rem;
+  }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { text-decoration: none; }
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .container { padding: 32px 18px 64px; }
+    header.article-header h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav style="margin-bottom: 32px; font-size: 0.9rem;">
+  <a href="/" style="color: var(--muted); text-decoration: none;">← All posts</a>
+</nav>
+
+<header class="article-header">
+  <h1>Composing One Screen From a Dozen Services</h1>
+  <p class="lede">
+    The home screen of a modern app is not owned by one service — it is a collage of fragments,
+    each owned by a different team. This is how to build the layer that stitches them together:
+    a Backend-for-Frontend that fans out in parallel, survives partial failure, and decides what
+    each user sees with a config-driven rules engine instead of a forest of <code>if</code> statements.
+  </p>
+  <div class="byline">
+    <strong>16 min read</strong> · Spring Boot · Java · Distributed systems · API design
+  </div>
+</header>
+
+<section>
+  <h2>The problem: one screen, a dozen owners</h2>
+  <p>
+    Open the home screen of almost any consumer app and you are looking at a dozen independent
+    decisions rendered side by side. A profile header. A row of quick actions. A promotional banner.
+    A list of recommended items. A "things that need your attention" strip. A bottom sheet that
+    appears once a month. Each of these is, behind the scenes, owned by a different backend service
+    with its own database, its own deploy cadence, and its own on-call rotation.
+  </p>
+  <p>
+    The naive way to assemble that screen is to let the client do it: the mobile app fires ten
+    requests, one per service, and arranges the answers itself. This falls apart quickly. The client
+    now knows the address of every service, has to orchestrate ten round trips over a flaky mobile
+    network, hard-codes the rules for which sections appear, and ships a new app build every time the
+    layout changes. Worse, every one of those ten teams has to think about mobile-specific concerns —
+    payload shape, versioning, backward compatibility — that have nothing to do with their domain.
+  </p>
+  <p>
+    The <strong>Backend-for-Frontend</strong> (BFF) pattern moves that assembly to the server. A single
+    service sits between the app and the fleet. The client makes <em>one</em> call — "give me the home
+    screen for this user" — and the BFF does the fan-out, the composition, the filtering, and the
+    shaping, returning exactly the payload the screen needs and nothing more.
+  </p>
+
+  <blockquote>
+    <p>
+      <strong>What we'll build.</strong> A BFF that aggregates many services into one screen response.
+      We'll cover the two-phase pipeline (gather context, then build sections), the concurrency model
+      that makes the fan-out fast, the graceful-degradation strategy that keeps a slow service from
+      taking down the whole screen, and a config-driven targeting engine that decides which content
+      each user is eligible to see.
+    </p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>The shape of the answer</h2>
+  <p>
+    Start at the contract. The client wants a single object whose fields map one-to-one onto the
+    regions of the screen. Nothing in this object hints at how it was assembled — that is the whole
+    point.
+  </p>
+
+<pre><code>public record ScreenResponse(
+    ProfileHeader      profile,
+    List&lt;QuickAction&gt;  quickActions,
+    Banner             topBanner,
+    List&lt;Card&gt;         recommended,
+    List&lt;Notice&gt;       importantUpdates,
+    PromoSheet         promoSheet      // may be null — not every user sees it
+) {}</code></pre>
+
+  <p>
+    Each field is produced independently. The profile header comes from the identity service; the
+    banner is chosen by the targeting engine; the recommendations come from a catalog service filtered
+    by eligibility. Some fields are nullable on purpose: if a section has nothing to show — or the
+    service that powers it is unavailable — the field is simply <code>null</code>, and the client
+    renders the screen without that region. That single design decision, <em>nullable sections</em>,
+    is what makes graceful degradation possible later.
+  </p>
+</section>
+
+<section>
+  <h2>Two phases: gather, then build</h2>
+  <p>
+    It is tempting to let each section fetch its own data. Don't. If the profile section calls the
+    identity service and the quick-actions section <em>also</em> calls the identity service, you've
+    doubled your load on a downstream and made the screen twice as fragile. Instead, split the work
+    into two distinct phases:
+  </p>
+  <ol>
+    <li>
+      <strong>Phase 1 — gather context.</strong> Make every downstream call exactly once, in parallel,
+      and collect the results into a single immutable <code>ScreenContext</code> object.
+    </li>
+    <li>
+      <strong>Phase 2 — build sections.</strong> Hand that fully-hydrated context to a set of section
+      builders. Builders do no I/O; they only read the context and shape their slice of the response.
+    </li>
+  </ol>
+  <p>
+    This separation pays for itself many times over. Downstream load is bounded and predictable.
+    Builders become pure functions — trivial to unit-test, because you hand them a context object and
+    assert on the output, with no mocking of HTTP clients. And the two phases have different failure
+    semantics, which we'll exploit.
+  </p>
+
+  <div class="flow">                         ┌─────────────────────── BFF ───────────────────────┐
+                         │                                                    │
+  GET /screen/{user}     │   Phase 1: gather (parallel I/O)                   │
+  ──────────────────▶    │   ┌──────────────────────────────────────────┐    │
+                         │   │ identity ─┐                               │    │
+                         │   │ catalog  ─┼─▶ join ─▶ ScreenContext        │    │
+                         │   │ activity ─┘   (immutable, all fetched once)│    │
+                         │   └──────────────────────────────────────────┘    │
+                         │                      │                             │
+                         │   Phase 2: build (pure, parallel, no I/O)          │
+                         │   ┌──────────────────▼───────────────────────┐    │
+                         │   │ ProfileBuilder ─┐                         │    │
+                         │   │ BannerBuilder  ─┼─▶ assemble ScreenResponse│    │
+                         │   │ CardsBuilder   ─┘                         │    │
+                         │   └──────────────────────────────────────────┘    │
+                         └────────────────────────────────────────────────────┘
+                                              │
+                                              ▼
+                                        one JSON payload</div>
+</section>
+
+<section>
+  <h2>Phase 1: gathering context in parallel</h2>
+  <p>
+    The downstream calls are independent of one another, so running them sequentially is pure waste:
+    ten 80&nbsp;ms calls back to back is 800&nbsp;ms of latency the user feels. Run them concurrently and
+    the total is roughly the slowest single call. <code>CompletableFuture</code> on a dedicated executor
+    is the cleanest way to express this in Java.
+  </p>
+
+<pre><code>public ScreenContext gatherContext(String userId) {
+    CompletableFuture&lt;Profile&gt;  profileF  =
+        supplyAsync(() -&gt; identityClient.getProfile(userId), executor);
+    CompletableFuture&lt;Activity&gt; activityF =
+        supplyAsync(() -&gt; activityClient.getActivity(userId), executor);
+    CompletableFuture&lt;List&lt;Item&gt;&gt; catalogF =
+        supplyAsync(() -&gt; catalogClient.getItems(userId), executor);
+    // ... one future per downstream ...
+
+    try {
+        CompletableFuture
+            .allOf(profileF, activityF, catalogF /* ... */)
+            .get(contextTimeoutSeconds, TimeUnit.SECONDS);   // overall budget
+    } catch (TimeoutException e) {
+        log.warn("context-timeout | userId={} | budget={}s — returning partial",
+                 userId, contextTimeoutSeconds);
+    }
+
+    return ScreenContext.builder()
+        .profile(resolve(profileF))     // null if this one failed or timed out
+        .activity(resolve(activityF))
+        .catalog(resolve(catalogF))
+        .build();
+}</code></pre>
+
+  <p>Two design choices in that snippet are worth dwelling on.</p>
+
+  <h3>An overall time budget, not per-call timeouts only</h3>
+  <p>
+    The <code>.get(timeout)</code> on <code>allOf</code> puts a single wall-clock budget on the entire
+    gather phase. You almost certainly still want per-client connect/read timeouts at the HTTP layer —
+    but the budget on top guarantees the screen responds in bounded time <em>even if a downstream's own
+    timeout is misconfigured</em>. The user gets a screen in, say, three seconds no matter what. A home
+    screen that is 90% complete and instant beats one that is 100% complete and arrives after a
+    thirty-second hang on a dead dependency.
+  </p>
+
+  <h3>resolve() turns failure into absence</h3>
+  <p>
+    The helper that reads each future never propagates an exception. It returns the value on success and
+    <code>null</code> on any failure or timeout:
+  </p>
+
+<pre><code>private static &lt;T&gt; T resolve(CompletableFuture&lt;T&gt; future) {
+    try {
+        return future.getNow(null);   // already complete after allOf; null otherwise
+    } catch (CompletionException | CancellationException e) {
+        return null;                  // a single downstream failing is not fatal
+    }
+}</code></pre>
+
+  <p>
+    By the time we build the context, a failed dependency is indistinguishable from one that returned
+    no data: both show up as <code>null</code>. The builders in Phase 2 only have to handle one case —
+    "this data is missing" — rather than two.
+  </p>
+</section>
+
+<section>
+  <h2>Graceful degradation as the default</h2>
+  <p>
+    The thread running through both phases is the same: <strong>a missing fragment must never fail the
+    whole screen.</strong> A screen aggregator is fan-in over a dozen independent systems. If the
+    probability that any one of them is healthy is 99.9%, the probability that <em>all twelve</em> are
+    simultaneously healthy is only ~98.8% — so on roughly one request in eighty, something is down. If
+    "something is down" means "blank screen," your app feels broken far more often than any single
+    service is actually broken.
+  </p>
+  <p>
+    The fix is to make absence a first-class, expected state at every layer:
+  </p>
+  <ul>
+    <li><strong>Context:</strong> a failed downstream becomes a <code>null</code> field, not a thrown exception.</li>
+    <li><strong>Builders:</strong> given a <code>null</code> input, a builder returns an empty or null section rather than blowing up.</li>
+    <li><strong>Response:</strong> a null section is a valid response field; the client omits that region.</li>
+  </ul>
+
+  <div class="callout warn">
+    <strong>The failure mode this prevents</strong>
+    Without explicit degradation, the default behaviour of <code>CompletableFuture.allOf().join()</code>
+    is to throw if <em>any</em> future failed. Ship that, and a single slow or down dependency turns into
+    a 500 for the entire home screen. The whole architecture hinges on deciding, deliberately, that
+    partial data is success.
+  </div>
+</section>
+
+<section>
+  <h2>Phase 2: the section builder, as a strategy</h2>
+  <p>
+    Twelve sections means twelve chunks of "take the context, produce this part of the response." That
+    is the <strong>Strategy pattern</strong> almost by definition: one interface, many interchangeable
+    implementations, each pluggable and independently testable.
+  </p>
+
+<pre><code>public interface SectionBuilder&lt;T&gt; {
+    T build(ScreenContext context);
+}</code></pre>
+
+  <p>
+    Each implementation owns exactly one region of the screen and reads only the parts of the context it
+    needs. Here's the recommendations builder — note that it copes with a missing catalog without any
+    special-casing from the caller:
+  </p>
+
+<pre><code>@Component
+public class RecommendedBuilder implements SectionBuilder&lt;List&lt;Card&gt;&gt; {
+
+    @Override
+    public List&lt;Card&gt; build(ScreenContext ctx) {
+        if (ctx.catalog() == null) {
+            return List.of();           // catalog service was down — show nothing
+        }
+        return ctx.catalog().items().stream()
+            .filter(item -&gt; isEligible(ctx, item))
+            .map(Card::from)
+            .toList();
+    }
+}</code></pre>
+
+  <p>
+    Because a builder is a pure function of the context, its test is a one-liner of arrange-act-assert:
+    construct a context, call <code>build</code>, assert on the section. No HTTP, no database, no clock,
+    no mocks. When a product manager asks "why did this user see that banner," you can reproduce the
+    decision deterministically from a captured context.
+  </p>
+
+  <h3>Running and isolating the builders</h3>
+  <p>
+    The aggregator runs the builders — also in parallel, since they're independent — and wraps each in a
+    boundary so that a bug in one builder can't take out the others:
+  </p>
+
+<pre><code>private &lt;T&gt; CompletableFuture&lt;T&gt; runBuilder(
+        SectionBuilder&lt;T&gt; builder, ScreenContext ctx, String name) {
+    return CompletableFuture
+        .supplyAsync(() -&gt; builder.build(ctx), executor)
+        .exceptionally(ex -&gt; {
+            log.error("section-build-failed | section={} | userId={}",
+                      name, ctx.userId(), ex);
+            metrics.increment("section_build_failure", "section", name);
+            return null;                // this section is absent; screen still ships
+        });
+}</code></pre>
+
+  <p>
+    The <code>.exceptionally(...)</code> is the second half of the degradation contract — the Phase&nbsp;1
+    <code>resolve()</code> handles "the data never arrived"; this handles "the builder threw while shaping
+    it." Either way the outcome is the same: a null section and a screen that still renders.
+  </p>
+</section>
+
+<section>
+  <h2>The concurrency plumbing you can't skip</h2>
+  <p>
+    Fanning work out across a thread pool quietly breaks two things that worked fine on a single request
+    thread: <strong>request context</strong> and <strong>error attribution</strong>. Both are easy to fix
+    and painful to debug if you don't.
+  </p>
+  <p>
+    Anything stored in a thread-local — the correlation ID in SLF4J's MDC, the authenticated user, the
+    app version negotiated for this request — lives on the request thread and does <em>not</em> follow
+    work onto an executor thread. The moment a builder runs on a pool thread, your logs lose the
+    correlation ID and your traces fragment. Spring's <code>TaskDecorator</code> closes the gap by
+    capturing the context on the submitting thread and restoring it on the worker:
+  </p>
+
+<pre><code>public class ContextPropagatingDecorator implements TaskDecorator {
+    @Override
+    public Runnable decorate(Runnable task) {
+        Map&lt;String, String&gt; captured = MDC.getCopyOfContextMap();   // submitter thread
+        return () -&gt; {
+            if (captured != null) MDC.setContextMap(captured);       // worker thread
+            try { task.run(); }
+            finally { MDC.clear(); }
+        };
+    }
+}
+
+@Bean
+public ThreadPoolTaskExecutor screenExecutor(TaskExecutionProperties props) {
+    var executor = new ThreadPoolTaskExecutor();
+    executor.setCorePoolSize(props.getPool().getCoreSize());
+    executor.setMaxPoolSize(props.getPool().getMaxSize());
+    executor.setQueueCapacity(props.getPool().getQueueCapacity());
+    executor.setTaskDecorator(new ContextPropagatingDecorator());
+    executor.initialize();
+    return executor;
+}</code></pre>
+
+  <p>
+    The same decorator should also forward the correlation ID onto outbound HTTP calls so the whole
+    fan-out shares one ID across services. I wrote that piece up separately —
+    <a href="/posts/correlation-id-spring-boot/">tracing requests across services with a correlation ID</a> —
+    and a screen aggregator is exactly the kind of fan-out that makes it indispensable.
+  </p>
+
+  <div class="callout">
+    <strong>Size the pool on purpose</strong>
+    A screen aggregator's threads spend almost all their time blocked on downstream I/O, not burning CPU.
+    That argues for a pool considerably larger than your core count — and a bounded queue, so that under
+    overload you shed load fast instead of piling up latency. Use a dedicated executor for this work; don't
+    share the framework's default pool with unrelated tasks that have different blocking profiles.
+  </div>
+</section>
+
+<section>
+  <h2>Deciding what each user sees: a config-driven rules engine</h2>
+  <p>
+    Now the harder half. A builder doesn't just shape data — it has to decide <em>whether</em> a section
+    appears and <em>which variant</em>. Which banner? Which products are this user eligible for? In what
+    order? The instinct is to encode this in code:
+  </p>
+
+<pre><code>// the slope you do not want to start down
+if (user.segment().equals("NEW") &amp;&amp; user.daysSinceSignup() &lt; 30
+        &amp;&amp; appVersion.atLeast("4.2") &amp;&amp; !blocklist.contains(user.id())) {
+    return Banner.WELCOME_OFFER;
+} else if (...) {
+    ...
+}</code></pre>
+
+  <p>
+    Every targeting change is now a code change, a deploy, and a release. Marketing wants to launch a
+    promotion on Friday; engineering is the bottleneck. Within a quarter this branch is forty cases deep
+    and nobody can say what any given user will see. The way out is to treat targeting as
+    <strong>data, not code</strong>: a rules engine that reads campaign definitions from a table and
+    evaluates them against the request context.
+  </p>
+
+  <h3>The campaign model</h3>
+  <p>
+    A campaign is a small, declarative record. Four fields carry the whole idea:
+  </p>
+  <ul>
+    <li><strong>Level</strong> — the targeting granularity: an individual <code>USER</code>, a
+      <code>GROUP</code> they belong to, or a broad <code>SEGMENT</code>. Levels are ranked, so a campaign
+      aimed at a specific user beats a campaign aimed at their whole segment.</li>
+    <li><strong>Value</strong> — the entity the campaign targets at that level (a user id, a group id, a
+      segment name).</li>
+    <li><strong>Filter conditions</strong> — extra predicates that must <em>all</em> hold for the campaign
+      to apply (e.g. "account age under 30 days"). AND semantics.</li>
+    <li><strong>Rules</strong> — an ordered, priority-keyed map of what to show: priority&nbsp;→ list of
+      candidate content. Lower priority number wins; within a tier, the first eligible candidate is chosen.</li>
+  </ul>
+
+<pre><code>public record Campaign(
+    String              identifier,
+    CampaignLevel       level,          // USER &gt; GROUP &gt; SEGMENT
+    String              value,
+    Instant             startsAt,
+    Instant             endsAt,
+    List&lt;String&gt;        filterConditions,
+    Map&lt;Integer, List&lt;String&gt;&gt; rules    // {1: ["A"], 2: ["B:variant", "C"]}
+) {}</code></pre>
+
+  <h3>Storing rules without a join table</h3>
+  <p>
+    The <code>rules</code> and <code>filterConditions</code> fields are variable-shaped — a map of lists, a
+    list of strings. Modelling them as fully normalized child tables would be a lot of JPA ceremony for data
+    that is only ever read and written as a whole. A pragmatic alternative is to serialize them to JSON and
+    store them in a single text/JSONB column, with a JPA <code>AttributeConverter</code> doing the
+    translation transparently:
+  </p>
+
+<pre><code>@Converter
+public class RulesConverter
+        implements AttributeConverter&lt;Map&lt;Integer, List&lt;String&gt;&gt;, String&gt; {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Override
+    public String convertToDatabaseColumn(Map&lt;Integer, List&lt;String&gt;&gt; rules) {
+        try { return MAPPER.writeValueAsString(rules); }
+        catch (JsonProcessingException e) {
+            throw new TargetingException("rules-serialize-failed", e);
+        }
+    }
+
+    @Override
+    public Map&lt;Integer, List&lt;String&gt;&gt; convertToEntityAttribute(String json) {
+        try {
+            return MAPPER.readValue(json,
+                new TypeReference&lt;LinkedHashMap&lt;Integer, List&lt;String&gt;&gt;&gt;() {});
+        } catch (IOException e) {
+            throw new TargetingException("rules-deserialize-failed", e);
+        }
+    }
+}</code></pre>
+
+  <p>
+    Two details matter here. Deserialize into a <code>LinkedHashMap</code> so insertion order survives the
+    round trip — priority ordering is meaningful and you don't want it scrambled. And wrap the
+    Jackson exceptions in a domain-specific exception that carries a greppable reason code, rather than
+    letting a raw <code>JsonProcessingException</code> leak out of the persistence layer.
+  </p>
+
+  <h3>Evaluation: precedence, conditions, eligibility</h3>
+  <p>
+    With campaigns in the table, choosing content for a user is three steps:
+  </p>
+  <ol>
+    <li>
+      <strong>Find candidate campaigns</strong> that are currently active (now between <code>startsAt</code>
+      and <code>endsAt</code>) and target this user at <em>some</em> level — by their id, their group, or
+      their segment.
+    </li>
+    <li>
+      <strong>Order by precedence</strong> — most specific level first (<code>USER</code> over
+      <code>GROUP</code> over <code>SEGMENT</code>), then most recently created — and pick the first whose
+      filter conditions all pass.
+    </li>
+    <li>
+      <strong>Walk the rules</strong> in priority order; within each priority tier, return the first
+      candidate the user is actually <em>eligible</em> for.
+    </li>
+  </ol>
+
+<pre><code>public List&lt;Content&gt; resolve(ScreenContext ctx) {
+    return activeCampaignsFor(ctx)                       // step 1
+        .stream()
+        .sorted(BY_LEVEL_THEN_RECENCY)                   // step 2
+        .filter(c -&gt; conditionsMatch(c.filterConditions(), ctx))
+        .findFirst()
+        .map(c -&gt; evaluateRules(c, ctx))                 // step 3
+        .orElse(List.of());
+}
+
+private boolean conditionsMatch(List&lt;String&gt; conditions, ScreenContext ctx) {
+    for (String condition : conditions) {               // AND — short-circuit
+        if (!evaluate(condition, ctx)) return false;
+    }
+    return true;
+}
+
+private List&lt;Content&gt; evaluateRules(Campaign campaign, ScreenContext ctx) {
+    return campaign.rules().entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())             // priority order
+        .flatMap(tier -&gt; tier.getValue().stream()
+            .map(ContentRef::parse)
+            .filter(ref -&gt; eligibilityChecker.isEligible(ctx, ref))
+            .findFirst()                                 // first eligible in tier
+            .stream())
+        .toList();
+}</code></pre>
+
+  <p>
+    The last piece, the <code>EligibilityChecker</code>, is where the rules engine meets reality. A
+    campaign can <em>offer</em> a piece of content, but the user must still qualify for it given the live
+    context — they haven't already adopted it, their app version supports it, their account is in the
+    right state. Keeping eligibility in one checker, separate from the campaign-selection logic, means the
+    same rule ("is this user eligible for X") is enforced identically whether X is being chosen by the
+    targeting engine, listed in a catalog, or checked by a standalone endpoint. One source of truth for
+    "can this user see this," many callers.
+  </p>
+
+  <div class="callout">
+    <strong>Why this structure earns its keep</strong>
+    Levels give you precedence (target a VIP user directly without disturbing their segment's campaign).
+    Filter conditions give you slicing (same campaign, narrowed to new accounts). Priority-keyed rules give
+    you fallback (offer A; if they already have it, offer B). And because it's all rows in a table, a
+    targeting change is a config update — reviewable, auditable, and reversible without a deploy.
+  </div>
+</section>
+
+<section>
+  <h2>Observability: know what the screen actually showed</h2>
+  <p>
+    A screen this dynamic is opaque unless you measure it. Two families of metrics make it legible. First,
+    <em>build health</em> per section — invoked, succeeded, failed — so a downstream degradation shows up as
+    a spike in <code>section_build_failure{section="recommended"}</code> long before it shows up in support
+    tickets. Second, <em>what the user saw</em>: increment a counter when a section is populated and another
+    when it comes back empty, tagged by the dimensions you target on (segment, group, app version).
+  </p>
+
+<pre><code>if (section == null || section.isEmpty()) {
+    metrics.increment("screen_section_empty", "section", name, "segment", ctx.segment());
+} else {
+    metrics.increment("screen_section_shown", "section", name, "segment", ctx.segment());
+}</code></pre>
+
+  <p>
+    The empty-rate per section is the single most useful number this service emits. A section that is empty
+    for 80% of users is either mis-targeted or pointing at an unhealthy dependency — and you'd never see
+    either from request-level success rates alone, because returning an empty section <em>is</em> a
+    successful request.
+  </p>
+</section>
+
+<section>
+  <h2>Where to take this next</h2>
+  <ol>
+    <li>
+      <strong>Cache the context, not the response.</strong> Several fragments change slowly (a profile,
+      group membership). Caching those context pieces with a short TTL cuts downstream load dramatically,
+      while still recomputing the cheap, fast-changing parts on every request. Cache the inputs to the
+      decision, not the decision itself.
+    </li>
+    <li>
+      <strong>Make the time budget adaptive.</strong> A fixed three-second budget is blunt. Track the p99 of
+      each downstream and trip a circuit breaker on the ones that are misbehaving, so a known-bad dependency
+      is skipped immediately rather than waited on every single request.
+    </li>
+    <li>
+      <strong>Promote rule conditions to a small expression language.</strong> Hand-named conditions
+      ("account age under 30 days") are fine until you have fifty of them. A tiny, sandboxed expression
+      grammar over the context lets non-engineers compose conditions without a new deploy for each one — at
+      the cost of building a safe evaluator, which is real work. Don't reach for it until the hard-coded
+      condition list genuinely hurts.
+    </li>
+  </ol>
+</section>
+
+<hr/>
+
+<section>
+  <h2>Recap</h2>
+  <p>
+    A Backend-for-Frontend turns a chaotic client-side fan-out into one clean call, and the discipline that
+    makes it robust is small but non-negotiable:
+  </p>
+  <ol>
+    <li>Give the client a flat response whose fields map onto screen regions, with nullable sections.</li>
+    <li>Split into two phases: gather all context once in parallel, then build sections from it as pure functions.</li>
+    <li>Put a wall-clock budget on the gather phase and turn every downstream failure into a <code>null</code>, not an exception.</li>
+    <li>Model sections as a <code>SectionBuilder</code> strategy, run them in parallel, and isolate each with <code>.exceptionally()</code>.</li>
+    <li>Propagate request context across the thread pool with a <code>TaskDecorator</code> so logs and traces survive the fan-out.</li>
+    <li>Drive "what to show whom" from a config-backed rules engine — levels for precedence, conditions for slicing, priority rules for fallback — not from branching code.</li>
+    <li>Measure what each section actually rendered; the per-section empty rate is your earliest warning signal.</li>
+  </ol>
+  <p>
+    Build it this way and the screen stays fast when a dependency is slow, stays up when a dependency is
+    down, and changes what it shows without waiting on a release. The complexity doesn't disappear — it
+    moves to where it belongs: behind one interface, expressed as data, observable from the outside.
+  </p>
+</section>
+
+<footer>
+  <p>
+    Related: if you build a fan-out service like this, you'll want every log line across the fan-out to
+    share one ID — see <a href="/posts/correlation-id-spring-boot/">Tracing Requests Across Spring Boot
+    Microservices with a Correlation ID</a>.
+  </p>
+  <p>
+    <strong>Author:</strong> <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">Aayush Miglani</a> ·
+    <a href="/">aayushmiglani.github.io</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
