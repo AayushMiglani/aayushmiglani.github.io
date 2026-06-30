@@ -1,138 +1,113 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Professional Software Engineer Resume
-% LaTeX Template
-% Version 3.5
+% Aayush — Software Engineer Resume
+% ATS-friendly, single-column, compact, project-oriented. Standard packages only.
+%   - Single column; standard headings; no tables/images/multi-column.
+%   - Hyperlinks in black; compact 10pt body + tight leading.
+%   - Section headings use \titlerule for a clean, tight rule under the title.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass[11pt]{article}
-\usepackage[left=0.75in,top=0.5in,right=0.75in,bottom=0.5in]{geometry}
+\documentclass[10pt]{article}
+\usepackage[left=0.5in,top=0.45in,right=0.5in,bottom=0.45in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{enumitem}
-\usepackage{hyperref}
-\usepackage{fontawesome5}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    urlcolor=blue
-}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
 
-\renewcommand{\baselinestretch}{1.1}
+\renewcommand{\baselinestretch}{1.0}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{5pt}
+\setlength{\parskip}{2pt}
+\ifdefined\pdfgentounicode\pdfgentounicode=1\fi   % clean text extraction for ATS (pdfTeX only)
 
-\newcommand{\name}[1]{
-    \begin{center}
-        {\Huge \bfseries #1}
-    \end{center}
-    \vspace{-5pt}
-}
+% ---- header helpers ----
+\newcommand{\name}[1]{\begin{center}{\fontsize{22}{24}\selectfont\bfseries #1}\end{center}\vspace{-2pt}}
+\newcommand{\contact}[1]{\begin{center}{\small #1}\end{center}\vspace{-4pt}}
 
-\newcommand{\contact}[1]{
-    \begin{center}
-        {\small #1}
-    \end{center}
-    \vspace{-10pt}
-}
+% ---- section heading: title with a tight rule directly beneath (clean spacing) ----
+\titleformat{\section}{\large\bfseries\scshape}{}{0em}{}[{\vspace{-3pt}\titlerule[0.8pt]}]
+\titlespacing*{\section}{0pt}{11pt}{5pt}
 
-\newcommand{\sectiontitle}[1]{
-    \vspace{12pt}
-    {\large \bfseries #1}
-    \vspace{4pt} 
-    \hrule height 0.75pt \color{black} \vspace{-2pt}
-}
+% ---- experience entry: {org}{role}{dates}{location} ----
+\newcommand{\entry}[4]{\textbf{#1} \hfill #3 \\ \textit{#2} \hfill \textit{#4}\vspace{1pt}}
 
-%----------------------------------------------------------------------------------------
-%	START DOCUMENT
-%----------------------------------------------------------------------------------------
+% ---- project entry: {title}{right-aligned writeup link or empty} ----
+\newcommand{\proj}[2]{\vspace{2pt}\textbf{#1}\hfill #2\par\vspace{-2pt}}
+
+% ---- small writeup link icon used in project headers ----
+\newcommand{\writeup}[1]{{\footnotesize\href{#1}{writeup~$\nearrow$}}}
+
+% ---- tight bullet list ----
+\newenvironment{bullets}{\begin{itemize}[leftmargin=12pt,itemsep=1.5pt,topsep=1pt,parsep=0pt]}{\end{itemize}}
 
 \begin{document}
-\pagestyle{empty} % Removes page numbers
+\pagestyle{empty}
 
-%----------------------------------------------------------------------------------------
-%	HEADER
-%----------------------------------------------------------------------------------------
+%---------------------------------------------------------------- HEADER
+\name{AAYUSH}
+\contact{Gurugram, India $\cdot$ \href{mailto:aayush8223@gmail.com}{aayush8223@gmail.com} $\cdot$ \href{https://www.linkedin.com/in/aayushmiglani/}{linkedin.com/in/aayushmiglani} $\cdot$ \href{https://github.com/aayushmiglani}{github.com/aayushmiglani} $\cdot$ \href{https://aayushmiglani.github.io/}{aayushmiglani.github.io}}
 
-\name{Aayush Miglani}
-\contact{Gurugram, India | \href{https://www.linkedin.com/in/aayushmiglani/}{linkedin.com/in/aayushmiglani} | \href{https://github.com/AayushMiglani}{github.com/AayushMiglani} | \href{https://aayushmiglani.github.io/}{aayushmiglani.github.io}}
+%---------------------------------------------------------------- EXPERIENCE
+\section{Experience}
+\entry{SalarySe}{Software Engineer (Jul 2024 -- Present) $\cdot$ Software Engineering Intern (Jan -- Jun 2024)}{Jan 2024 -- Present}{Gurugram, India}
 
-%----------------------------------------------------------------------------------------
-%	EDUCATION SECTION
-%----------------------------------------------------------------------------------------
+\proj{SalarySe UPI}{}
+\begin{bullets}
+  \item Built core UPI payment flows scaling to \textbf{INR 1B+ monthly TPV across 200K+ users}, covering P2P, P2M, scan, intent, collect, mandates, and BBPS transactions.
+  \item Implemented production payment safeguards: secure gateway request signing, idempotent transaction handling, webhook settlement processing, scheduled reconciliation, Redis caching, SQS fan-out, and pre-payment fraud controls.
+\end{bullets}
 
-\sectiontitle{Education}
+\proj{Employee Benefits}{}
+\begin{bullets}
+  \item Built an event-driven employee benefits claim pipeline using UPI events, SQS, merchant categorisation, and state-based monthly distribution.
+  \item Automated bill verification with \textbf{AWS Textract OCR}, LLM-based extraction, and validation checks for amount, merchant, tax ID, duplicates, and authenticity, \textbf{auto-clearing \textasciitilde60\% of bills without manual review}.
+\end{bullets}
 
-\textbf{BITS Pilani, Goa Campus} \hfill Aug 2020 -- Jun 2024 \\
-Bachelor of Engineering in Electronics and Communication \hfill \textbf{CGPA: 8.35/10} \\
-Relevant Courses: Data Structures and Algorithms, Software Development for Portable Devices, Communication Networks, Probability \& Statistics
+\proj{Rewards Engine}{}
+\begin{bullets}
+  \item Built a rewards platform \textbf{clearing INR 5M+ in monthly redemptions}, with configurable earn rules, daily/monthly cap enforcement, precomputed balance aggregates, and scheduled reconciliation.
+\end{bullets}
 
-%----------------------------------------------------------------------------------------
-%	WORK EXPERIENCE SECTION
-%----------------------------------------------------------------------------------------
+\proj{Homepage Aggregator}{\writeup{https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/}}
+\begin{bullets}
+  \item Built a backend-for-frontend for the app home screen that \textbf{cut p95 load time from 500ms to 75ms} through parallel service calls, aggregate timeouts, and per-section graceful degradation.
+\end{bullets}
 
-\sectiontitle{Work Experience}
+\proj{Bureau Ingestion Service}{\writeup{https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/}}
+\begin{bullets}
+  \item Reworked bulk credit-bureau CSV ingestion from \textbf{70M inserts to 25K batched writes} using streaming parsing, JDBC batching, and cached sequence allocation, eliminating DB CPU spikes on a shared instance.
+\end{bullets}
 
-\textbf{SalarySe} -- Software Engineer \hfill Jul 2024 -- Present \\
-Gurugram, India
-\begin{itemize}[leftmargin=10pt]
-    \item Designed a high-scale real-time UPI payment infrastructure processing \textbf{INR 1B+} in monthly transaction value for \textbf{200,000+ users}.
-    \item Developed a comprehensive Rewards System handling \textbf{INR 10M+} in monthly transaction volume, enabling seamless credit accumulation and redemption.
-    \item Built a Gift Card marketplace with integrations for \textbf{200+ brands}, driving \textbf{INR 5M+} in monthly purchases; implemented redemption logic for both cash transfers and in-app wallet usage.
-    \item Engineered a credit report parsing engine using \textbf{Java Regex} and \textbf{Object Mapper} to extract key financial parameters, feeding into a business rule engine to automate product offering decisions.
-    \item Launched an in-app Help \& Support ticketing system processing \textbf{2,000+ monthly tickets}, streamlining issue resolution for the customer support team.
-\end{itemize}
+\proj{Distributed Tracing}{\writeup{https://aayushmiglani.github.io/posts/correlation-id-spring-boot/}}
+\begin{bullets}
+  \item Implemented request tracing across 11+ services with correlation IDs, gateway-level logging context, inter-service propagation, async context preservation, and Sentry error correlation.
+\end{bullets}
 
-\textbf{SalarySe} -- Software Engineering Intern \hfill Jan 2024 -- Jun 2024 \\
-Gurugram, India
-\begin{itemize}[leftmargin=10pt]
-    \item Implemented distributed tracing across microservices by utilizing Spring Boot MDC and generating unique correlation IDs at the API Gateway level.
-    \item Integrated Sentry for backend error tracking, establishing the standard monitoring protocol now adopted by the entire backend engineering team.
-    \item Developed central operational dashboards using Retool, now utilized daily by the \textbf{10-member Customer Support team}, Operations, and Product teams to manage critical workflows.
-\end{itemize}
+\vspace{3pt}
+\entry{BITS Pilani, Goa}{Teaching Assistant --- Digital Image Processing}{Aug 2023 -- Dec 2023}{Goa, India}
+\begin{bullets}
+  \item Mentored 60+ students; supported evaluation, lab sessions, and invigilation.
+\end{bullets}
 
-\textbf{BITS Pilani, Goa Campus} -- Teaching Assistant \hfill Aug 2023 -- Dec 2023 \\
-Goa, India
-\begin{itemize}[leftmargin=10pt]
-    \item Mentored 60+ students in Digital Image Processing and assisted the professor in conducting and invigilating course evaluation components.
-\end{itemize}
+\vspace{3pt}
+\entry{Swecha (NGO)}{Web Development Intern}{May 2022 -- Jul 2022}{Remote}
+\begin{bullets}
+  \item Built a live video-streaming and chat platform in \textbf{Elixir / Phoenix}, using Phoenix Channels over WebSockets for low-latency classroom interactions.
+\end{bullets}
 
-\newpage
+%---------------------------------------------------------------- SKILLS
+\section{Technical Skills}
+\begin{bullets}
+  \item \textbf{Languages:} Java, Python, SQL, JavaScript, Bash
+  \item \textbf{Backend:} Spring Boot, Spring Data JPA, Spring Security, OpenFeign, Hibernate, REST, JUnit 5 / Mockito
+  \item \textbf{Data \& Messaging:} PostgreSQL, Redis, DynamoDB, SQS
+  \item \textbf{Cloud \& Infra:} AWS (S3, SQS, Textract), Docker, Kubernetes, GitHub Actions
+  \item \textbf{Observability:} Sentry, Prometheus, Grafana, Log4j2 + MDC, JaCoCo
+\end{bullets}
 
-\textbf{Finlatics} -- Business Analyst Intern \hfill Nov 2022 -- Dec 2022 \\
-Remote
-\begin{itemize}[leftmargin=10pt]
-    \item Analyzed consumer behavior using Power BI to generate actionable insights for marketing strategies.
-\end{itemize}
-
-\textbf{Swecha (NGO)} -- Web Development Intern \hfill May 2022 -- Jul 2022 \\
-Remote
-\begin{itemize}[leftmargin=10pt]
-    \item Developed a live video streaming service with chat capabilities, serving the NGO's education outreach program.
-\end{itemize}
-
-%----------------------------------------------------------------------------------------
-%	TECHNICAL SKILLS SECTION
-%----------------------------------------------------------------------------------------
-
-\sectiontitle{Technical Skills}
-
-\begin{itemize}[leftmargin=10pt]
-    \item \textbf{Languages:} Java, Python, JavaScript, SQL
-    \item \textbf{Frameworks:} Spring Boot
-    \item \textbf{Cloud/DevOps:} AWS, Docker, Kubernetes, Sentry, Grafana
-    \item \textbf{Databases:} PostgreSQL, MongoDB
-    \item \textbf{Tools:} IntelliJ IDEA, VS Code, Retool, Appsmith
-\end{itemize}
-
-%----------------------------------------------------------------------------------------
-%	ACHIEVEMENTS SECTION
-%----------------------------------------------------------------------------------------
-
-\sectiontitle{Other Achievements}
-
-\begin{itemize}[leftmargin=10pt]
-    \item Achieved top rank in Mobile Telecommunication Networks among 120 students.
-    \item Demonstrated leadership as captain of \textbf{BITS Goa VALORANT Team}, leading the squad to the BOSM 2023 championship.
-\end{itemize}
-
-%----------------------------------------------------------------------------------------
+%---------------------------------------------------------------- EDUCATION
+\section{Education}
+\textbf{Birla Institute of Technology and Science (BITS), Pilani --- Goa Campus} \hfill Aug 2020 -- Jun 2024 \\
+B.E., Electronics and Communication \hfill \textbf{CGPA: 8.35/10} \\
+Relevant coursework: Data Structures \& Algorithms, Software Development for Portable Devices, Communication Networks, Probability \& Statistics, Digital Image Processing
 
 \end{document}

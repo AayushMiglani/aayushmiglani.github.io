@@ -273,9 +273,11 @@
 
 <header class="resume-header">
   <h1>Aayush Miglani</h1>
-  <p class="headline">Backend Engineer — payments, rewards, observability.</p>
+  <p class="headline">Backend Engineer — payments, rewards, distributed systems.</p>
   <p class="contact">
     Gurugram, India
+    <span class="sep">·</span>
+    <a href="mailto:aayush8223@gmail.com">aayush8223@gmail.com</a>
     <span class="sep">·</span>
     <a href="https://www.linkedin.com/in/aayushmiglani/" target="_blank" rel="noopener">linkedin.com/in/aayushmiglani</a>
     <span class="sep">·</span>
@@ -291,28 +293,18 @@
   <div class="role">
     <div class="role-head">
       <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineer</span></div>
-      <div class="right">Jul 2024 — Present</div>
+      <div class="right">Jan 2024 — Present</div>
     </div>
     <p class="place">Gurugram, India</p>
     <ul>
-      <li>Designed a high-scale real-time UPI payment infrastructure processing <strong>INR 1B+</strong> in monthly transaction value for <strong>200,000+ users</strong>.</li>
-      <li>Developed a comprehensive Rewards system handling <strong>INR 10M+</strong> in monthly transaction volume, enabling seamless credit accumulation and redemption.</li>
-      <li>Built a Gift Card marketplace with integrations for <strong>200+ brands</strong>, driving <strong>INR 5M+</strong> in monthly purchases; implemented redemption logic for both cash transfers and in-app wallet usage.</li>
-      <li>Engineered a credit report parsing engine in Java (Regex + Jackson ObjectMapper) to extract key financial parameters, feeding a business rule engine that automates product offering decisions.</li>
-      <li>Launched an in-app Help &amp; Support ticketing system processing <strong>2,000+ monthly tickets</strong>, streamlining issue resolution for the customer support team.</li>
-    </ul>
-  </div>
-
-  <div class="role">
-    <div class="role-head">
-      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineering Intern</span></div>
-      <div class="right">Jan 2024 — Jun 2024</div>
-    </div>
-    <p class="place">Gurugram, India</p>
-    <ul>
-      <li>Implemented distributed tracing across microservices using Spring Boot MDC and unique correlation IDs minted at the API gateway.</li>
-      <li>Integrated Sentry for backend error tracking, establishing the standard monitoring protocol now adopted by the entire backend engineering team.</li>
-      <li>Built central operational dashboards in Retool, used daily by the <strong>10-member Customer Support team</strong>, Operations, and Product to manage critical workflows.</li>
+      <li>Built core UPI payment flows scaling to <strong>INR 1B+ monthly TPV across 200K+ users</strong>, covering P2P, P2M, scan, intent, collect, mandates, and BBPS transactions.</li>
+      <li>Implemented production payment safeguards: secure gateway request signing, idempotent transaction handling, webhook settlement processing, scheduled reconciliation, Redis caching, SQS fan-out, and pre-payment fraud controls.</li>
+      <li>Built an event-driven employee benefits claim pipeline using UPI events, SQS, merchant categorisation, and state-based monthly distribution.</li>
+      <li>Automated bill verification with <strong>AWS Textract OCR</strong>, LLM-based extraction, and validation checks for amount, merchant, tax ID, duplicates, and authenticity, <strong>auto-clearing ~60% of bills without manual review</strong>.</li>
+      <li>Built a rewards platform <strong>clearing INR 5M+ in monthly redemptions</strong>, with configurable earn rules, daily/monthly cap enforcement, precomputed balance aggregates, and scheduled reconciliation.</li>
+      <li>Built a backend-for-frontend for the app home screen that <strong>cut p95 load time from 500ms to 75ms</strong> through parallel service calls, aggregate timeouts, and per-section graceful degradation.</li>
+      <li>Reworked bulk credit-bureau CSV ingestion from <strong>70M inserts to 25K batched writes</strong> using streaming parsing, JDBC batching, and cached sequence allocation, eliminating DB CPU spikes on a shared instance.</li>
+      <li>Implemented request tracing across 11+ services with correlation IDs, gateway-level logging context, inter-service propagation, async context preservation, and Sentry error correlation.</li>
     </ul>
   </div>
 
@@ -329,36 +321,13 @@
 
   <div class="role">
     <div class="role-head">
-      <div class="left"><span class="org">Finlatics</span><span class="sep">·</span><span class="title">Business Analyst Intern</span></div>
-      <div class="right">Nov 2022 — Dec 2022</div>
-    </div>
-    <p class="place">Remote</p>
-    <ul>
-      <li>Analysed consumer behaviour in Power BI to generate actionable insights for marketing strategies.</li>
-    </ul>
-  </div>
-
-  <div class="role">
-    <div class="role-head">
       <div class="left"><span class="org">Swecha (NGO)</span><span class="sep">·</span><span class="title">Web Development Intern</span></div>
       <div class="right">May 2022 — Jul 2022</div>
     </div>
     <p class="place">Remote</p>
     <ul>
-      <li>Developed a live video streaming service with chat capabilities, serving the NGO's education outreach program.</li>
+      <li>Built a live video-streaming and chat platform in <strong>Elixir / Phoenix</strong>, using Phoenix Channels over WebSockets for low-latency classroom interactions.</li>
     </ul>
-  </div>
-</section>
-
-<section>
-  <h2 class="section-heading">Projects</h2>
-
-  <div class="project">
-    <div class="project-head">
-      <div class="name">correlation-id-spring-boot</div>
-      <div class="meta">Java · Spring Boot · <a href="https://github.com/AayushMiglani/correlation-id-spring-boot" target="_blank" rel="noopener">repo</a> · <a href="/posts/correlation-id-spring-boot/">writeup</a></div>
-    </div>
-    <p>Reference implementation for stamping every log line in a Spring Boot fleet with a single correlation ID — servlet filter, Feign interceptor, Log4J2 pattern, and AOP advices to survive <code>@Async</code> and <code>@Scheduled</code> boundaries.</p>
   </div>
 </section>
 
@@ -366,15 +335,15 @@
   <h2 class="section-heading">Skills</h2>
   <div class="skills-grid">
     <div class="label">Languages</div>
-    <div>Java, Python, JavaScript, SQL</div>
-    <div class="label">Frameworks</div>
-    <div>Spring Boot</div>
-    <div class="label">Cloud / DevOps</div>
-    <div>AWS, Docker, Kubernetes, Sentry, Grafana</div>
-    <div class="label">Databases</div>
-    <div>PostgreSQL, MongoDB</div>
-    <div class="label">Tools</div>
-    <div>IntelliJ IDEA, VS Code, Retool, Appsmith</div>
+    <div>Java, Python, SQL, JavaScript, Bash</div>
+    <div class="label">Backend</div>
+    <div>Spring Boot, Spring Data JPA, Spring Security, OpenFeign, Hibernate, REST, JUnit 5 / Mockito</div>
+    <div class="label">Data / Messaging</div>
+    <div>PostgreSQL, Redis, DynamoDB, SQS</div>
+    <div class="label">Cloud / Infra</div>
+    <div>AWS S3, AWS SQS, AWS Textract, Docker, Kubernetes, GitHub Actions</div>
+    <div class="label">Observability</div>
+    <div>Sentry, Prometheus, Grafana, Log4j2 + MDC, JaCoCo</div>
   </div>
 </section>
 
@@ -393,18 +362,10 @@
   </div>
 </section>
 
-<section>
-  <h2 class="section-heading">Achievements</h2>
-  <ul class="achievements">
-    <li>Achieved top rank in Mobile Telecommunication Networks among 120 students.</li>
-    <li>Captained the <strong>BITS Goa VALORANT team</strong>, leading the squad to the BOSM 2023 championship.</li>
-  </ul>
-</section>
-
 <footer>
   <p>
     Source on <a href="https://github.com/AayushMiglani/aayushmiglani.github.io" target="_blank" rel="noopener">GitHub</a>.
-    Last updated <span id="updated">May 2026</span>.
+    Last updated <span id="updated">June 2026</span>.
   </p>
 </footer>
 
