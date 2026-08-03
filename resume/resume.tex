@@ -52,34 +52,33 @@
 
 \proj{SalarySe UPI}{}
 \begin{bullets}
-  \item Built core UPI payment flows scaling to \textbf{INR 1B+ monthly TPV across 200K+ users}, covering P2P, P2M, scan, intent, collect, mandates, and BBPS transactions.
-  \item Implemented production payment safeguards: secure gateway request signing, idempotent transaction handling, webhook settlement processing, scheduled reconciliation, Redis caching, SQS fan-out, and pre-payment fraud controls.
+  \item Owned backend APIs for UPI onboarding---device binding, bank-account linking, and VPA creation---and implemented post-onboarding amount limits plus device/account blocks for \textbf{500K users}.
+  \item Built webhook handlers for UPI payment-status updates, keeping transaction records in sync and triggering user notifications across \textbf{100K daily transactions}.
 \end{bullets}
 
 \proj{Employee Benefits}{}
 \begin{bullets}
-  \item Built an event-driven employee benefits claim pipeline using UPI events, SQS, merchant categorisation, and state-based monthly distribution.
-  \item Automated bill verification with \textbf{AWS Textract OCR}, LLM-based extraction, and validation checks for amount, merchant, tax ID, duplicates, and authenticity, \textbf{auto-clearing \textasciitilde60\% of bills without manual review}.
+  \item Built a bill-processing pipeline that used \textbf{AWS Textract OCR} and LLMs to extract and validate fields from handwritten and printed bills, with a \textbf{PDFBox}- and LLM-based path for predefined PDF formats; \textbf{auto-cleared 80\% without manual review}.
 \end{bullets}
 
 \proj{Rewards Engine}{}
 \begin{bullets}
-  \item Built a rewards platform \textbf{clearing INR 5M+ in monthly redemptions}, with configurable earn rules, daily/monthly cap enforcement, precomputed balance aggregates, and scheduled reconciliation.
+  \item Built rewards disbursement logic for SalarySe credit cards and UPI transactions, disbursing \textbf{INR 50M+ in rewards monthly}; also built redemption flows that let users apply rewards to UPI payments or convert them to cash through external bank APIs, processing \textbf{INR 10M+ in redemptions monthly}.
 \end{bullets}
 
 \proj{Homepage Aggregator}{\writeup{https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/}}
 \begin{bullets}
-  \item Built a backend-for-frontend for the app home screen that \textbf{cut p95 load time from 500ms to 75ms} through parallel service calls, aggregate timeouts, and per-section graceful degradation.
+  \item Reworked the app's home-screen API to fetch data from \textbf{8 services} in parallel, handling \textbf{42K requests/hour} while \textbf{cutting p95 load time from 500ms to 75ms}; unaffected sections remained available when a downstream service failed.
 \end{bullets}
 
-\proj{Bureau Ingestion Service}{\writeup{https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/}}
+\proj{CSV Ingestion}{\writeup{https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/}}
 \begin{bullets}
-  \item Reworked bulk credit-bureau CSV ingestion from \textbf{70M inserts to 25K batched writes} using streaming parsing, JDBC batching, and cached sequence allocation, eliminating DB CPU spikes on a shared instance.
+  \item Reduced database write operations for bulk credit-bureau CSV ingestion from \textbf{70M individual inserts to 25K batches} using streaming parsing, JDBC batching, and cached sequence allocation, eliminating CPU spikes on a shared database instance.
 \end{bullets}
 
 \proj{Distributed Tracing}{\writeup{https://aayushmiglani.github.io/posts/correlation-id-spring-boot/}}
 \begin{bullets}
-  \item Implemented request tracing across 11+ services with correlation IDs, gateway-level logging context, inter-service propagation, async context preservation, and Sentry error correlation.
+  \item Added end-to-end request tracing across \textbf{11+ services}, carrying correlation IDs from the API gateway through synchronous and asynchronous calls so errors could be traced in logs and Sentry.
 \end{bullets}
 
 \vspace{3pt}
