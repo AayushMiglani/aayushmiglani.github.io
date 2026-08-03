@@ -11,6 +11,9 @@ Personal site for engineering writing — built as plain static HTML, served by 
 ├── index.html                              — homepage / post index
 ├── 404.html                                — custom 404
 └── posts/
+    ├── multi-identity-token-auth-gateway/
+    │   ├── index.html                      — multi-tenant token auth / gateway post
+    │   └── crosspost/devto.md              — dev.to cross-post (canonical → site)
     ├── batch-bulk-ingestion-spring-jpa/
     │   ├── index.html                      — bulk CSV ingestion / batching post
     │   └── crosspost/devto.md              — dev.to cross-post (canonical → site)

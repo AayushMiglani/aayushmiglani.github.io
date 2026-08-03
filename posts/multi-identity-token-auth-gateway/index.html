@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Two Kinds of Caller, One Gateway: Extensible Token Auth for Multi-Tenant APIs — Aayush Miglani</title>
+<meta name="description" content="How to authenticate first-party app users and third-party API partners through one Spring Boot gateway — a single identity contract, per-caller token issuers, a pluggable verification SPI, and scope-as-URI-prefix authorization at the edge." />
+<meta name="author" content="Aayush Miglani" />
+<link rel="canonical" href="https://aayushmiglani.github.io/posts/multi-identity-token-auth-gateway/" />
+
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Two Kinds of Caller, One Gateway: Extensible Token Auth for Multi-Tenant APIs" />
+<meta property="og:description" content="One identity contract, per-caller token issuers, a pluggable verification SPI, and scope-as-URI-prefix authorization at the gateway." />
+<meta property="og:url" content="https://aayushmiglani.github.io/posts/multi-identity-token-auth-gateway/" />
+<meta property="og:site_name" content="Aayush Miglani" />
+
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Two Kinds of Caller, One Gateway: Extensible Token Auth for Multi-Tenant APIs" />
+<meta name="twitter:description" content="One identity contract, per-caller token issuers, a pluggable verification SPI, and scope-as-URI-prefix authorization at the gateway." />
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --accent: #0969da;
+    --accent-soft: #ddf4ff;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --callout-bg: #fff8c5;
+    --callout-border: #d4a72c;
+    --warn-bg: #ffebe9;
+    --warn-border: #ff8182;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: Charter, Georgia, "Iowan Old Style", "Times New Roman", serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    font-size: 19px;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+  header.article-header { margin-bottom: 40px; }
+  header.article-header h1 {
+    font-size: 2.4rem;
+    line-height: 1.2;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  header.article-header .lede {
+    color: var(--muted);
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-style: italic;
+  }
+  .byline {
+    font-size: 0.9rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+  }
+  h2 {
+    font-size: 1.6rem;
+    margin: 56px 0 16px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+  h3 {
+    font-size: 1.2rem;
+    margin: 36px 0 12px;
+    font-weight: 700;
+  }
+  p { margin: 0 0 20px; }
+  ul, ol { margin: 0 0 20px; padding-left: 28px; }
+  li { margin: 6px 0; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    color: var(--fg);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.82em;
+  }
+  pre {
+    background: #0d1117;
+    color: #e6edf3;
+    padding: 18px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    margin: 16px 0 24px;
+  }
+  pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    font-size: inherit;
+  }
+  blockquote {
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--fg);
+    margin: 24px 0;
+    padding: 14px 20px;
+    border-radius: 0 6px 6px 0;
+    font-style: italic;
+  }
+  blockquote p:last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--callout-border);
+    background: var(--callout-bg);
+    padding: 14px 18px;
+    border-radius: 4px;
+    margin: 24px 0;
+    font-size: 0.95em;
+    font-style: normal;
+  }
+  .callout.warn {
+    border-left-color: var(--warn-border);
+    background: var(--warn-bg);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .flow {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    white-space: pre;
+    overflow-x: auto;
+    line-height: 1.45;
+    margin: 24px 0;
+  }
+  hr {
+    border: none;
+    text-align: center;
+    margin: 40px 0;
+  }
+  hr::before {
+    content: "· · ·";
+    color: var(--muted);
+    letter-spacing: 0.5em;
+    font-size: 1.1rem;
+  }
+  a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  a:hover { text-decoration: none; }
+  footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .container { padding: 32px 18px 64px; }
+    header.article-header h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<nav style="margin-bottom: 32px; font-size: 0.9rem;">
+  <a href="/" style="color: var(--muted); text-decoration: none;">← All posts</a>
+</nav>
+
+<header class="article-header">
+  <h1>Two Kinds of Caller, One Gateway: Extensible Token Auth for Multi-Tenant APIs</h1>
+  <p class="lede">
+    Most auth systems are born to serve one kind of caller — the humans using your app. Then a partner
+    wants API access, and the question becomes: how do you let a second, very different caller in without
+    forking your auth code in half? Here is a design that scales to <em>n</em> caller types behind one gateway.
+  </p>
+  <div class="byline">
+    <strong>13 min read</strong> · Spring Boot · Java · Auth · API design · Distributed systems
+  </div>
+</header>
+
+<section>
+  <h2>The problem: a second kind of caller shows up</h2>
+  <p>
+    Picture a backend that started life with exactly one audience: people using your app. They sign in with
+    a phone number and an OTP, or an email and a password, and from then on every request carries a token
+    that says <em>who</em> they are. Your gateway verifies the token, figures out the user, and lets the
+    request through. Simple, and it works for years.
+  </p>
+  <p>
+    Then the shape of the business changes. A partner company wants to call your API directly — server to
+    server, no human in the loop — to read a slice of data or trigger a workflow on behalf of their own
+    product. They don't have a phone number. They don't log in with an OTP. They authenticate with a client
+    ID and a secret, the way machines do. And crucially, they must <strong>not</strong> be able to call your
+    whole API: they get a narrow, explicit list of endpoints and nothing else.
+  </p>
+  <p>
+    The lazy way to absorb this is to reach into the existing token code and start branching.
+    <code>if (isPartner) { ... } else { ... }</code> in the token issuer. Another branch in the verifier.
+    A third in the gateway. Six months later a third caller type appears — an internal service, say — and
+    now every one of those branches becomes a three-way <code>switch</code>. The auth layer, the most
+    security-sensitive code you own, turns into a thicket of conditionals that no one wants to touch.
+  </p>
+  <p>
+    There is a cleaner shape. The trick is to notice that issuing a token and verifying a token are two
+    different problems with two different amounts of variation — and to design each accordingly.
+  </p>
+
+  <blockquote>
+    <p>
+      <strong>What you'll build.</strong> A multi-caller auth layer for a Spring Boot platform: a single
+      <code>Identity</code> contract every caller collapses into, a separate token <em>issuer</em> per
+      caller type (because minting genuinely differs), one pluggable verification SPI that new caller
+      types extend without edits, a token store that makes JWTs revocable, and a gateway filter chain that
+      authorizes partners down to an explicit list of paths — deny-by-default at the edge.
+    </p>
+  </blockquote>
+</section>
+
+<section>
+  <h2>The mental model in 60 seconds</h2>
+  <p>
+    Three ideas carry the whole design. Hold them and the rest is detail.
+  </p>
+  <ol>
+    <li>
+      <strong>One identity contract.</strong> However a caller authenticated and whatever token shape they
+      carry, verification produces the same small value object: a subject (who), a set of scopes (what
+      they're allowed to touch), and a bag of attributes (caller-specific config). Downstream code never
+      asks "is this a partner?" — it just reads an <code>Identity</code>.
+    </li>
+    <li>
+      <strong>Issuance varies, so keep issuers separate; verification converges, so unify it.</strong>
+      Minting a human session (refresh tokens, OTP, long expiry) looks nothing like minting a
+      machine-to-machine token (no refresh, short expiry, client-secret login). Don't force them into one
+      method. But every token, once minted, is signed the same way and verified through one entry point.
+    </li>
+    <li>
+      <strong>Authorize at the edge.</strong> The gateway authenticates the token, turns it into an
+      <code>Identity</code>, and then — for callers that carry scopes — checks the requested path against
+      that scope list before the request ever reaches a backend service.
+    </li>
+  </ol>
+
+  <div class="flow">  first-party caller                third-party partner
+  (phone + OTP / pwd)               (client id + secret)
+        │                                   │
+        ▼                                   ▼
+  ┌───────────────┐                 ┌───────────────────┐
+  │ SessionIssuer │                 │  PartnerIssuer    │     ── issuance: separate
+  │ access+refresh│                 │  short-lived,     │        per caller type
+  │ token         │                 │  carries scopes   │
+  └───────┬───────┘                 └─────────┬─────────┘
+          │  signed JWT                       │  signed JWT
+          └─────────────────┬─────────────────┘
+                            ▼
+                  ┌───────────────────┐
+   every request  │      Gateway      │
+   ─────────────▶ │                   │
+                  │  AuthFilter ──▶ verifyToken()  ── unified verification
+                  │     │              │              dispatch by token "type"
+                  │     │              ▼
+                  │     │        ┌──────────────┐
+                  │     │        │   Identity   │  subject + scopes + attributes
+                  │     │        └──────┬───────┘
+                  │     ▼               │
+                  │  ScopeFilter ◀──────┘    ── authorize: path vs scope list
+                  │     │  (partners only; first-party = allow-all)
+                  └─────┼─────────────────┘
+                        ▼
+                  backend services</div>
+</section>
+
+<section>
+  <h2>Phase 1 — One identity contract for every caller</h2>
+  <p>
+    Start at the end. Whatever a request's token says, the rest of your system should receive the same
+    thing. Define it as a small, immutable value object:
+  </p>
+
+<pre><code>public record Identity(
+        String subject,                  // who: user id, partner id, service name
+        Set&lt;String&gt; scopes,              // what they may call (empty = unrestricted)
+        Map&lt;String, String&gt; attributes   // caller-specific config, e.g. a tenant key
+) {
+    public boolean isScoped() {
+        return scopes != null &amp;&amp; !scopes.isEmpty();
+    }
+}</code></pre>
+
+  <p>
+    This single type is doing the heavy lifting. "Partner-ness" is not a flag or a subclass — it's just an
+    <code>Identity</code> that happens to carry a non-empty <code>scopes</code> set. A first-party user is
+    an <code>Identity</code> with no scopes (which, as we'll see, the gateway reads as "allowed
+    everywhere"). An internal service you add next year is an <code>Identity</code> with its own scopes.
+    Every consumer downstream — controllers, audit logging, rate limiters — speaks one language.
+  </p>
+  <p>
+    The <code>attributes</code> map is the quiet workhorse. A partner often comes with per-tenant
+    configuration: a routing key, a limit override, a feature toggle. Carrying that on the identity means a
+    downstream handler can read it without knowing — or caring — that it came from a partner token.
+  </p>
+
+  <div class="callout">
+    <strong>Keep this object dumb.</strong>
+    No behavior, no database handles, no Spring magic — just data. The whole point is that it's trivially
+    constructable by any verifier and trivially readable by anything downstream. Resist the urge to hang
+    "convenience" methods that hit a service off it.
+  </div>
+</section>
+
+<section>
+  <h2>Phase 2 — Separate issuers, because minting really is different</h2>
+  <p>
+    It is tempting to make one <code>createToken(...)</code> that takes a caller type and branches. Don't.
+    The two flows differ in ways that aren't incidental:
+  </p>
+  <ul>
+    <li>
+      <strong>First-party sessions</strong> need a long-lived <em>refresh</em> token alongside the access
+      token, because a human session should survive for days without re-login. They're minted after an
+      interactive login (OTP, password).
+    </li>
+    <li>
+      <strong>Partner tokens</strong> have <em>no</em> refresh token. A machine re-authenticates with its
+      client secret whenever it needs a fresh token — cheap, and it avoids handing a long-lived credential
+      to a server you don't control. They're minted after a client-credentials check, and they carry scopes.
+    </li>
+  </ul>
+  <p>
+    So you keep the original session issuer untouched and add a second issuer next to it. The session issuer
+    stays roughly as it always was:
+  </p>
+
+<pre><code>@Service
+@RequiredArgsConstructor
+public class SessionTokenIssuer {
+
+    private final TokenSigner signer;          // shared signing (see Phase 3)
+    private final TokenStore store;            // shared store    (see Phase 4)
+
+    public TokenPair issueForUser(String userId, ClientChannel channel) {
+        long ttl = channel == ClientChannel.WEB ? webTtl : appTtl;
+
+        String access  = signer.sign(builder -&gt; builder
+                .withSubject(userId)
+                .withExpiresAt(Instant.now().plusMillis(ttl)));
+        String refresh = signer.sign(builder -&gt; builder
+                .withSubject(userId)
+                .withExpiresAt(Instant.now().plusMillis(refreshTtl)));
+
+        store.put(accessKey(userId), access, ttl);
+        store.put(refreshKey(userId), refresh, refreshTtl);
+        return new TokenPair(access, refresh);
+    }
+}</code></pre>
+
+  <p>
+    The partner issuer is a different method on a different class. It authenticates the client secret, loads
+    the scopes and attributes provisioned for that client, and bakes them into a single short-lived token:
+  </p>
+
+<pre><code>@Service
+@RequiredArgsConstructor
+public class PartnerTokenIssuer {
+
+    private final TokenSigner signer;
+    private final TokenStore store;
+    private final PasswordEncoder passwordEncoder;
+    private final PartnerCredentialRepository credentials;
+
+    public String authenticateAndIssue(String clientId, String clientSecret) {
+        PartnerCredential cred = credentials.findActiveByClientId(clientId)
+                .orElseThrow(() -&gt; new AuthException("invalid_client"));
+
+        // Compare against a stored hash — never the raw secret.
+        if (!passwordEncoder.matches(clientSecret, cred.secretHash())) {
+            throw new AuthException("invalid_client");
+        }
+
+        String token = signer.sign(builder -&gt; builder
+                .withSubject(cred.partnerId())
+                .withClaim("type", "PARTNER")               // the discriminator
+                .withArrayClaim("scopes", cred.scopes())     // baked in at mint time
+                .withClaim("attributes", cred.attributes())
+                .withExpiresAt(Instant.now().plusMillis(partnerTtl)));
+
+        store.put(partnerKey(cred.partnerId()), token, partnerTtl);
+        return token;
+    }
+}</code></pre>
+
+  <p>
+    Notice two things. First, the partner's permissions are <em>baked into the token at mint time</em> — the
+    scopes come from the credential store once, at issuance, not on every request. That's a deliberate
+    trade-off: fewer database reads on the hot path, at the cost of a partner's permissions being frozen for
+    the lifetime of a token. Second, the partner token carries a <code>type</code> claim. The session token
+    does not. That asymmetry is the hinge of the next phase.
+  </p>
+</section>
+
+<section>
+  <h2>Phase 3 — One verification SPI, open for extension</h2>
+  <p>
+    Verification is where you <em>want</em> convergence, because every caller's token has to be checked by
+    the same gateway on the same hot path. This is the part you make extensible. Define a strategy interface
+    — a service provider interface (SPI) — for "things that can turn a decoded token into an
+    <code>Identity</code>":
+  </p>
+
+<pre><code>public interface TokenVerifier {
+
+    /** Does this verifier handle tokens of the given type? */
+    boolean supports(String tokenType);
+
+    /** Validate the token's claims/state and produce the caller's identity. */
+    Identity verify(DecodedToken decoded, String rawToken);
+}</code></pre>
+
+  <p>
+    Now the central <code>TokenService</code> doesn't know about partners, users, or services. It verifies
+    the signature once, reads the <code>type</code> claim, and dispatches to whichever verifier claims it.
+    Spring injects <em>every</em> bean implementing the interface as a list, so adding a verifier is adding
+    a class — nothing here changes:
+  </p>
+
+<pre><code>@Service
+@RequiredArgsConstructor
+public class TokenService {
+
+    private final TokenSigner signer;
+    private final List&lt;TokenVerifier&gt; verifiers;   // all implementations, injected
+
+    public Identity verifyToken(String rawToken) {
+        DecodedToken decoded = signer.verifySignature(rawToken);   // throws if invalid/expired
+        String type = decoded.claim("type");                       // null for legacy sessions
+
+        return verifiers.stream()
+                .filter(v -&gt; v.supports(type))
+                .findFirst()
+                .orElseThrow(() -&gt; new AuthException("unsupported_token_type"))
+                .verify(decoded, rawToken);
+    }
+}</code></pre>
+
+  <p>
+    The two implementations are small and self-contained:
+  </p>
+
+<pre><code>@Service
+class PartnerTokenVerifier implements TokenVerifier {
+    private final TokenStore store;
+
+    public boolean supports(String type) { return "PARTNER".equals(type); }
+
+    public Identity verify(DecodedToken decoded, String rawToken) {
+        String partnerId = decoded.subject();
+        assertCurrent(store, partnerKey(partnerId), rawToken);     // Phase 4
+        return new Identity(
+                partnerId,
+                Set.copyOf(decoded.listClaim("scopes")),
+                decoded.mapClaim("attributes"));
+    }
+}
+
+@Service
+class SessionTokenVerifier implements TokenVerifier {
+    private final TokenStore store;
+
+    // Legacy session tokens predate the type system — they have NO type claim.
+    public boolean supports(String type) { return type == null; }
+
+    public Identity verify(DecodedToken decoded, String rawToken) {
+        String userId = decoded.subject();
+        assertCurrent(store, accessKey(userId), rawToken);
+        return new Identity(userId, Set.of(), Map.of());   // no scopes = unrestricted
+    }
+}</code></pre>
+
+  <p>
+    This is the open/closed principle doing real work. Want to onboard internal service tokens next quarter?
+    Mint them with <code>type=SERVICE</code> and write a <code>ServiceTokenVerifier</code>. The dispatcher,
+    the gateway, and the <code>Identity</code> contract are all untouched. The most dangerous file in the
+    codebase — the one that decides who gets in — stops growing.
+  </p>
+
+  <div class="callout warn">
+    <strong>The honest part: "no type claim" means first-party</strong>
+    In a real system this design usually arrives <em>after</em> first-party tokens already exist in the
+    wild. Those tokens were minted before anyone imagined a <code>type</code> claim, so they don't have one.
+    Re-minting every live session to add <code>type=USER</code> would log everyone out. So instead, the
+    session verifier claims tokens where <code>type == null</code>. It's a backward-compatibility seam, not
+    elegance — but it's the correct call: you extend the model for new callers without invalidating tokens
+    already in people's pockets. If you're building greenfield, give every token an explicit type from day
+    one and skip the null.
+  </div>
+
+  <h3>One signer for all of them</h3>
+  <p>
+    The reason verification can be unified at all is that every token, regardless of issuer, is signed by
+    one component with one key. Centralize it so the algorithm lives in exactly one place:
+  </p>
+
+<pre><code>@Component
+public class TokenSigner {
+
+    @Value("${auth.rsa-signing-enabled:false}")
+    private boolean rsaEnabled;
+
+    private Algorithm algorithm() {
+        // A feature flag lets you migrate symmetric → asymmetric with no code change.
+        return rsaEnabled
+                ? Algorithm.RSA256(publicKey, privateKey)   // asymmetric: verifiers need only the public key
+                : Algorithm.HMAC256(sharedSecret);           // symmetric: one shared secret
+    }
+}</code></pre>
+
+  <p>
+    Hiding the algorithm behind a flag is a small thing that pays off once: when you outgrow a shared HMAC
+    secret and want asymmetric keys (so downstream services can verify with a public key they can't forge
+    with), it's a config change, not a migration. Load the keys once at startup and treat them as immutable
+    — the signer becomes a stateless singleton that's safe to share across every request thread.
+  </p>
+</section>
+
+<section>
+  <h2>Phase 4 — Make the JWT revocable with a token store</h2>
+  <p>
+    A pure JWT is stateless and unrevocable: anyone holding a validly-signed, unexpired token is in, and
+    there is no "log out" short of waiting for expiry. For a lot of systems that's unacceptable — you need
+    to be able to kill a session, and you often want only one active token per subject. The fix is to make
+    the JWT <em>stateful</em>: store the current token in a fast key/value store (Redis is the usual
+    choice), keyed by subject, and require the presented token to match it.
+  </p>
+
+<pre><code>static void assertCurrent(TokenStore store, String key, String rawToken) {
+    String current = store.get(key);
+    if (current == null || !current.equals(rawToken)) {
+        // signature was valid, but this token is no longer the active one
+        throw new AuthException("token_revoked");
+    }
+}</code></pre>
+
+  <p>
+    That one equality check buys you three behaviors for free:
+  </p>
+  <ul>
+    <li><strong>Logout works.</strong> Delete the key; the next request with that token fails.</li>
+    <li>
+      <strong>Single active session.</strong> Issuing a new token overwrites the stored value, so the
+      previous token instantly stops verifying — a fresh login elsewhere boots the old one.
+    </li>
+    <li>
+      <strong>Stolen-but-stale tokens die.</strong> Even a valid signature isn't enough if the token isn't
+      the current one.
+    </li>
+  </ul>
+  <p>
+    Set the store entry's TTL equal to the JWT's expiry so the two can never disagree about when a token
+    dies. The cost is real and worth naming: every request now does a store lookup, so your gateway can't
+    validate purely in-process — it trades the headline advantage of stateless JWTs for operational
+    control. For most consumer and partner APIs, being able to revoke is worth a single Redis read.
+  </p>
+
+  <div class="callout">
+    <strong>Pick your point on the spectrum.</strong>
+    Fully stateless JWTs scale beautifully and revoke terribly. Store-backed tokens revoke instantly and
+    cost a lookup. A middle path — short access-token TTL plus a revocation check only on refresh — splits
+    the difference. There's no universally right answer; decide based on how badly you need instant logout.
+  </div>
+</section>
+
+<section>
+  <h2>Phase 5 — Authorize at the edge with scopes as path prefixes</h2>
+  <p>
+    Authentication tells you <em>who</em> is calling. Authorization decides <em>what</em> they may call. For
+    partners, that's the whole ballgame: they must reach only the endpoints you've granted them. The
+    cleanest place to enforce it is the gateway, before the request touches any backend — and the simplest
+    model that works is to make <strong>scopes literally be URI prefixes</strong>.
+  </p>
+  <p>
+    A partner provisioned with scopes <code>["/v1/orders", "/v1/catalog"]</code> may call
+    <code>/v1/orders</code>, <code>/v1/orders/42</code>, and anything under <code>/v1/catalog/…</code> — and
+    nothing else. No scope registry, no mapping table, no annotations to keep in sync. The grant list
+    <em>is</em> the path set. The gateway runs two filters in order.
+  </p>
+
+  <h3>5a. The authentication filter — token to identity</h3>
+
+<pre><code>@Component
+@Order(2)
+public class AuthenticationFilter extends OncePerRequestFilter {
+
+    private final AuthClient authClient;   // calls TokenService.verifyToken()
+
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                    FilterChain chain) throws ... {
+        if (isPublic(req.getRequestURI())) { chain.doFilter(req, res); return; }
+
+        String token = req.getHeader("x-token");
+        if (token == null) { res.sendError(401); return; }
+
+        Identity identity;
+        try { identity = authClient.verify(token); }
+        catch (AuthException e) { res.sendError(401); return; }
+
+        req.setAttribute("subject", identity.subject());
+        if (identity.isScoped()) {
+            req.setAttribute("scopes", identity.scopes());        // only partners get this
+        }
+        // Spread caller-specific config so any downstream handler can read it.
+        identity.attributes().forEach(req::setAttribute);
+
+        chain.doFilter(req, res);
+    }
+}</code></pre>
+
+  <p>
+    The key move: <code>scopes</code> lands on the request <em>only</em> when the identity is scoped.
+    First-party users have empty scopes, so the attribute is never set for them — which is exactly what
+    makes the next filter a no-op for humans.
+  </p>
+
+  <h3>5b. The scope filter — path against grant list</h3>
+
+<pre><code>@Component
+@Order(3)
+public class ScopeFilter extends OncePerRequestFilter {
+
+    @SuppressWarnings("unchecked")
+    protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                    FilterChain chain) throws ... {
+        Set&lt;String&gt; scopes = (Set&lt;String&gt;) req.getAttribute("scopes");
+
+        // No scopes on the request = unscoped caller (a first-party user). Allow through.
+        if (scopes == null || scopes.isEmpty()) { chain.doFilter(req, res); return; }
+
+        String uri = req.getRequestURI();
+        boolean allowed = scopes.stream()
+                .anyMatch(scope -&gt; uri.equals(scope) || uri.startsWith(scope + "/"));
+
+        if (!allowed) { res.sendError(403, "scope not permitted"); return; }
+        chain.doFilter(req, res);
+    }
+}</code></pre>
+
+  <p>
+    Read the policy off those two filters: <strong>deny-by-default for partners, allow-all for first-party
+    users.</strong> A partner can reach exactly the prefixes on its grant list and gets a 403 otherwise; a
+    user (no scopes) sails through scope-checking and is constrained only by per-resource ownership rules
+    deeper in the stack. That asymmetry is intentional — your own users are trusted to use your product;
+    external callers are trusted with precisely what you wrote down.
+  </p>
+
+  <div class="callout warn">
+    <strong>The trap: <code>startsWith</code> is coarser than it looks</strong>
+    Prefix matching is wonderfully simple and has two sharp edges. First, always compare against
+    <code>scope + "/"</code> (or an exact match), never a bare <code>startsWith(scope)</code> — otherwise a
+    grant for <code>/v1/order</code> silently also permits <code>/v1/orders-admin</code>. Second, a path
+    prefix can't distinguish HTTP verbs: a scope of <code>/v1/orders</code> grants <code>GET</code>
+    <em>and</em> <code>POST</code> <em>and</em> <code>DELETE</code>. If a partner should read but not write,
+    prefixes alone won't express it — fold the method into the scope (<code>GET:/v1/orders</code>) or move
+    to a real policy model. Know which one you need before you ship.
+  </div>
+</section>
+
+<section>
+  <h2>Where to take this next</h2>
+  <p>
+    The design above is the load-bearing 90%. Three directions extend it cleanly:
+  </p>
+  <ol>
+    <li>
+      <strong>Add a third caller type to prove the seam.</strong> Internal service-to-service tokens
+      (<code>type=SERVICE</code>) are the natural next tenant. If adding them is "write one
+      <code>TokenVerifier</code>, mint with a new type, provision scopes" and nothing in
+      <code>TokenService</code> or the gateway changes, your SPI is doing its job. If you find yourself
+      editing the dispatcher, the abstraction leaked — fix that first.
+    </li>
+    <li>
+      <strong>Make scopes expressive without abandoning simplicity.</strong> Method-aware scopes
+      (<code>GET:/v1/orders</code>) cover most "read-only partner" needs with a one-line change to the
+      matcher. Only reach for a full policy engine (OPA, Cedar, Spring Authorization Server scopes) when
+      prefix-or-method genuinely can't model your grants — premature policy frameworks are their own kind of
+      tar pit.
+    </li>
+    <li>
+      <strong>Solve scope staleness if it bites.</strong> Baking scopes into the token means revoking a
+      partner's access means waiting for expiry (or nuking their store entry). If you need instant
+      permission changes, keep the token thin (subject + type only) and look scopes up from the credential
+      store per request — paying a lookup to buy freshness, the same trade you made in Phase 4.
+    </li>
+  </ol>
+</section>
+
+<hr/>
+
+<section>
+  <h2>Recap</h2>
+  <p>
+    Letting a second kind of caller into an auth system built for one doesn't require forking your auth code
+    — it requires separating the part that varies (issuance) from the part that should converge
+    (verification), with one identity contract in the middle. The recipe:
+  </p>
+  <ol>
+    <li>Define one immutable <code>Identity</code> (subject + scopes + attributes) that every caller collapses into.</li>
+    <li>Keep a <em>separate issuer per caller type</em> — sessions get refresh tokens and interactive login; partners get short-lived, scoped, client-secret tokens. Don't merge them.</li>
+    <li>Sign every token with one centralized signer (algorithm behind a flag, keys loaded once).</li>
+    <li>Verify through one <code>TokenService</code> that dispatches by a <code>type</code> claim to a <code>List&lt;TokenVerifier&gt;</code> — adding a caller type is adding a class.</li>
+    <li>Use "no type claim" as the legacy first-party discriminator so you never have to re-mint live tokens.</li>
+    <li>Make tokens revocable by storing the current token per subject and requiring a match on verify.</li>
+    <li>Authorize partners at the gateway with scopes-as-URI-prefixes: deny-by-default for scoped callers, allow-all for unscoped users.</li>
+  </ol>
+  <p>
+    Ship that, and the next caller type — and the one after — is a small, boring, low-risk change to the
+    riskiest code you own. Which is exactly what you want auth changes to be.
+  </p>
+</section>
+
+<footer>
+  <p>
+    Found this useful? The same "vary the edges, converge the core" shape shows up well beyond auth — any
+    time you have many inputs that must become one canonical internal representation. If you enjoyed the
+    gateway-and-filters angle, the <a href="/posts/correlation-id-spring-boot/">correlation-ID post</a>
+    works the same servlet-filter seam for observability, and the
+    <a href="/posts/backend-for-frontend-aggregation/">backend-for-frontend post</a> covers composing one
+    response from many services.
+  </p>
+  <p>
+    <strong>Author:</strong> <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">Aayush Miglani</a> ·
+    <a href="/">aayushmiglani.github.io</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
