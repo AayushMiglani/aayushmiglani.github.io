@@ -273,7 +273,6 @@
 
 <header class="resume-header">
   <h1>Aayush Miglani</h1>
-  <p class="headline">Backend Engineer — payments, rewards, distributed systems.</p>
   <p class="contact">
     Gurugram, India
     <span class="sep">·</span>
@@ -292,30 +291,45 @@
 
   <div class="role">
     <div class="role-head">
-      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineer</span></div>
+      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineer (Jul 2024 — Present) · Software Engineering Intern (Jan — Jun 2024)</span></div>
       <div class="right">Jan 2024 — Present</div>
     </div>
     <p class="place">Gurugram, India</p>
-    <ul>
-      <li>Built core UPI payment flows scaling to <strong>INR 1B+ monthly TPV across 200K+ users</strong>, covering P2P, P2M, scan, intent, collect, mandates, and BBPS transactions.</li>
-      <li>Implemented production payment safeguards: secure gateway request signing, idempotent transaction handling, webhook settlement processing, scheduled reconciliation, Redis caching, SQS fan-out, and pre-payment fraud controls.</li>
-      <li>Built an event-driven employee benefits claim pipeline using UPI events, SQS, merchant categorisation, and state-based monthly distribution.</li>
-      <li>Automated bill verification with <strong>AWS Textract OCR</strong>, LLM-based extraction, and validation checks for amount, merchant, tax ID, duplicates, and authenticity, <strong>auto-clearing ~60% of bills without manual review</strong>.</li>
-      <li>Built a rewards platform <strong>clearing INR 5M+ in monthly redemptions</strong>, with configurable earn rules, daily/monthly cap enforcement, precomputed balance aggregates, and scheduled reconciliation.</li>
-      <li>Built a backend-for-frontend for the app home screen that <strong>cut p95 load time from 500ms to 75ms</strong> through parallel service calls, aggregate timeouts, and per-section graceful degradation.</li>
-      <li>Reworked bulk credit-bureau CSV ingestion from <strong>70M inserts to 25K batched writes</strong> using streaming parsing, JDBC batching, and cached sequence allocation, eliminating DB CPU spikes on a shared instance.</li>
-      <li>Implemented request tracing across 11+ services with correlation IDs, gateway-level logging context, inter-service propagation, async context preservation, and Sentry error correlation.</li>
-    </ul>
+    <div class="project">
+      <div class="project-head"><span class="name">SalarySe UPI</span></div>
+      <p>Owned backend APIs for UPI onboarding — device binding, bank-account linking, and VPA creation — and implemented post-onboarding amount limits plus device/account blocks for <strong>500K users</strong>.</p>
+      <p>Built webhook handlers for UPI payment-status updates, keeping transaction records in sync and triggering user notifications across <strong>100K daily transactions</strong>.</p>
+    </div>
+    <div class="project">
+      <div class="project-head"><span class="name">Bill Processing</span></div>
+      <p>Built a bill-processing pipeline that used <strong>AWS Textract OCR</strong> and LLMs to extract and validate fields from handwritten and printed bills, with a <strong>PDFBox</strong>- and LLM-based path for predefined PDF formats; <strong>auto-cleared 80% without manual review</strong>.</p>
+    </div>
+    <div class="project">
+      <div class="project-head"><span class="name">Rewards Engine</span></div>
+      <p>Built rewards disbursement logic for SalarySe credit cards and UPI transactions, disbursing <strong>INR 50M+ in rewards monthly</strong>; also built redemption flows that let users apply rewards to UPI payments or convert them to cash through external bank APIs, processing <strong>INR 10M+ in redemptions monthly</strong>.</p>
+    </div>
+    <div class="project">
+      <div class="project-head"><span class="name">Homepage Aggregator</span><a class="meta" href="/posts/backend-for-frontend-aggregation/">Writeup ↗</a></div>
+      <p>Reworked the app's home-screen API to fetch data from <strong>8 services</strong> in parallel, handling <strong>42K requests/hour</strong> while <strong>cutting p95 load time from 500ms to 75ms</strong>; unaffected sections remained available when a downstream service failed.</p>
+    </div>
+    <div class="project">
+      <div class="project-head"><span class="name">CSV Ingestion</span><a class="meta" href="/posts/batch-bulk-ingestion-spring-jpa/">Writeup ↗</a></div>
+      <p>Reduced database write operations for bulk credit-bureau CSV ingestion from <strong>70M individual inserts to 25K batches</strong> using streaming parsing, JDBC batching, and cached sequence allocation, eliminating CPU spikes on a shared database instance.</p>
+    </div>
+    <div class="project">
+      <div class="project-head"><span class="name">Distributed Tracing</span><a class="meta" href="/posts/correlation-id-spring-boot/">Writeup ↗</a></div>
+      <p>Added end-to-end request tracing across <strong>11+ services</strong>, carrying correlation IDs from the API gateway through synchronous and asynchronous calls so errors could be traced in logs and Sentry.</p>
+    </div>
   </div>
 
   <div class="role">
     <div class="role-head">
-      <div class="left"><span class="org">BITS Pilani, Goa Campus</span><span class="sep">·</span><span class="title">Teaching Assistant</span></div>
+      <div class="left"><span class="org">BITS Pilani, Goa</span><span class="sep">·</span><span class="title">Teaching Assistant — Digital Image Processing</span></div>
       <div class="right">Aug 2023 — Dec 2023</div>
     </div>
     <p class="place">Goa, India</p>
     <ul>
-      <li>Mentored 60+ students in Digital Image Processing and assisted the professor in conducting and invigilating course evaluation components.</li>
+      <li>Mentored 60+ students; supported evaluation, lab sessions, and invigilation.</li>
     </ul>
   </div>
 
@@ -341,7 +355,7 @@
     <div class="label">Data / Messaging</div>
     <div>PostgreSQL, Redis, DynamoDB, SQS</div>
     <div class="label">Cloud / Infra</div>
-    <div>AWS S3, AWS SQS, AWS Textract, Docker, Kubernetes, GitHub Actions</div>
+    <div>AWS (S3, SQS, Textract), Docker, Kubernetes, GitHub Actions</div>
     <div class="label">Observability</div>
     <div>Sentry, Prometheus, Grafana, Log4j2 + MDC, JaCoCo</div>
   </div>
@@ -351,21 +365,21 @@
   <h2 class="section-heading">Education</h2>
   <div>
     <div class="edu-head">
-      <div class="school">BITS Pilani, Goa Campus</div>
+      <div class="school">Birla Institute of Technology and Science (BITS), Pilani — Goa Campus</div>
       <div class="right">Aug 2020 — Jun 2024</div>
     </div>
     <div class="edu-line">
-      <div>Bachelor of Engineering in Electronics &amp; Communication</div>
-      <div class="gpa">CGPA 8.35 / 10</div>
+      <div>B.E., Electronics &amp; Communication</div>
+      <div class="gpa">CGPA: 8.35/10</div>
     </div>
-    <p class="courses">Relevant coursework: Data Structures &amp; Algorithms, Software Development for Portable Devices, Communication Networks, Probability &amp; Statistics.</p>
+    <p class="courses">Relevant coursework: Data Structures &amp; Algorithms, Software Development for Portable Devices, Communication Networks, Probability &amp; Statistics, Digital Image Processing.</p>
   </div>
 </section>
 
 <footer>
   <p>
     Source on <a href="https://github.com/AayushMiglani/aayushmiglani.github.io" target="_blank" rel="noopener">GitHub</a>.
-    Last updated <span id="updated">June 2026</span>.
+    Last updated <span id="updated">August 2026</span>.
   </p>
 </footer>
 
