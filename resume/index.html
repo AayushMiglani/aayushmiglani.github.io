@@ -4,19 +4,19 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Aayush Miglani — Resume</title>
-<meta name="description" content="Resume of Aayush Miglani — Backend Engineer working on payments, rewards, and observability at SalarySe." />
+<meta name="description" content="Resume of Aayush Miglani — Software Engineer on the founding team at SalarySe, building payments, rewards, and platform systems." />
 <meta name="author" content="Aayush Miglani" />
 <link rel="canonical" href="https://aayushmiglani.github.io/resume/" />
 
 <meta property="og:type" content="profile" />
 <meta property="og:title" content="Aayush Miglani — Resume" />
-<meta property="og:description" content="Backend Engineer — payments, rewards, observability." />
+<meta property="og:description" content="Software Engineer — payments, rewards, and platform systems." />
 <meta property="og:url" content="https://aayushmiglani.github.io/resume/" />
 <meta property="og:site_name" content="Aayush Miglani" />
 
 <meta name="twitter:card" content="summary" />
 <meta name="twitter:title" content="Aayush Miglani — Resume" />
-<meta name="twitter:description" content="Backend Engineer — payments, rewards, observability." />
+<meta name="twitter:description" content="Software Engineer — payments, rewards, and platform systems." />
 
 <style>
   :root {
@@ -291,34 +291,28 @@
 
   <div class="role">
     <div class="role-head">
-      <div class="left"><span class="org">SalarySe</span><span class="sep">·</span><span class="title">Software Engineer (Jul 2024 — Present) · Software Engineering Intern (Jan — Jun 2024)</span></div>
+      <div class="left"><span class="org">SalarySe (backed by Peak XV and Pravega)</span><span class="sep">·</span><span class="title">Software Engineer, Founding Team (PPO)</span></div>
       <div class="right">Jan 2024 — Present</div>
     </div>
     <p class="place">Gurugram, India</p>
     <div class="project">
-      <div class="project-head"><span class="name">SalarySe UPI</span></div>
-      <p>Owned backend APIs for UPI onboarding — device binding, bank-account linking, and VPA creation — and implemented post-onboarding amount limits plus device/account blocks for <strong>500K users</strong>.</p>
-      <p>Built webhook handlers for UPI payment-status updates, keeping transaction records in sync and triggering user notifications across <strong>100K daily transactions</strong>.</p>
+      <div class="project-head"><span class="name">Product</span></div>
+      <ul>
+        <li>Built UPI onboarding APIs for device binding, bank-account linking, VPA creation, and post-onboarding controls; enabled secure activation for <strong>500K users</strong>.</li>
+        <li>Built webhook-driven payment-status processing and notifications; kept transaction records synchronized across <strong>100K daily UPI transactions</strong>.</li>
+        <li>Built business-rule engines for loan and credit-card eligibility using <strong>Experian</strong> bureau reports; supported issuance of <strong>25K credit cards</strong>.</li>
+        <li>Automated bill processing with <strong>AWS Textract</strong>, <strong>PDFBox</strong>, and LLM-based extraction and validation; auto-cleared <strong>80% of bills</strong> without manual review.</li>
+        <li>Built rewards accrual and redemption flows for card and UPI transactions through external bank APIs; disbursed <strong>INR 50M+</strong> and redeemed <strong>INR 10M+</strong> in rewards monthly.</li>
+      </ul>
     </div>
     <div class="project">
-      <div class="project-head"><span class="name">Bill Processing</span></div>
-      <p>Built a bill-processing pipeline that used <strong>AWS Textract OCR</strong> and LLMs to extract and validate fields from handwritten and printed bills, with a <strong>PDFBox</strong>- and LLM-based path for predefined PDF formats; <strong>auto-cleared 80% without manual review</strong>.</p>
-    </div>
-    <div class="project">
-      <div class="project-head"><span class="name">Rewards Engine</span></div>
-      <p>Built rewards disbursement logic for SalarySe credit cards and UPI transactions, disbursing <strong>INR 50M+ in rewards monthly</strong>; also built redemption flows that let users apply rewards to UPI payments or convert them to cash through external bank APIs, processing <strong>INR 10M+ in redemptions monthly</strong>.</p>
-    </div>
-    <div class="project">
-      <div class="project-head"><span class="name">Homepage Aggregator</span><a class="meta" href="/posts/backend-for-frontend-aggregation/">Writeup ↗</a></div>
-      <p>Reworked the app's home-screen API to fetch data from <strong>8 services</strong> in parallel, handling <strong>42K requests/hour</strong> while <strong>cutting p95 load time from 500ms to 75ms</strong>; unaffected sections remained available when a downstream service failed.</p>
-    </div>
-    <div class="project">
-      <div class="project-head"><span class="name">CSV Ingestion</span><a class="meta" href="/posts/batch-bulk-ingestion-spring-jpa/">Writeup ↗</a></div>
-      <p>Reduced database write operations for bulk credit-bureau CSV ingestion from <strong>70M individual inserts to 25K batches</strong> using streaming parsing, JDBC batching, and cached sequence allocation, eliminating CPU spikes on a shared database instance.</p>
-    </div>
-    <div class="project">
-      <div class="project-head"><span class="name">Distributed Tracing</span><a class="meta" href="/posts/correlation-id-spring-boot/">Writeup ↗</a></div>
-      <p>Added end-to-end request tracing across <strong>11+ services</strong>, carrying correlation IDs from the API gateway through synchronous and asynchronous calls so errors could be traced in logs and Sentry.</p>
+      <div class="project-head"><span class="name">Platform</span></div>
+      <ul>
+        <li>Built an authentication and access-control system for the SalarySe app and partner dashboard using Redis, JWTs, and RSA-signed tokens; used scopes and partner attributes to restrict each partner to its permitted APIs and data.</li>
+        <li>Re-architected the home-screen API to fan out to <strong>8 services</strong> in parallel with partial-failure isolation; cut p95 load time from <strong>500ms to 75ms</strong> across <strong>42K requests/hour</strong>.</li>
+        <li>Optimized bulk credit-bureau ingestion with streaming parsing, JDBC batching, and cached sequence allocation; reduced database writes from <strong>70M inserts to 25K batches</strong> and eliminated shared-database CPU spikes.</li>
+        <li>Introduced correlation-ID propagation across <strong>11+ services</strong> and asynchronous calls using gateway filters and MDC logging; made production errors traceable end-to-end in logs and Sentry.</li>
+      </ul>
     </div>
   </div>
 
@@ -329,7 +323,8 @@
     </div>
     <p class="place">Goa, India</p>
     <ul>
-      <li>Mentored 60+ students; supported evaluation, lab sessions, and invigilation.</li>
+      <li>Conducted MATLAB sessions for <strong>60 students</strong> in Digital Image Processing, using hands-on exercises to reinforce course concepts.</li>
+      <li>Administered, invigilated, and evaluated <strong>3 quizzes</strong> with the instructor, ensuring consistent assessment across the cohort.</li>
     </ul>
   </div>
 

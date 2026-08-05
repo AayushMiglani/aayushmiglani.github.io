@@ -48,43 +48,30 @@
 
 %---------------------------------------------------------------- EXPERIENCE
 \section{Experience}
-\entry{SalarySe}{Software Engineer (Jul 2024 -- Present) $\cdot$ Software Engineering Intern (Jan -- Jun 2024)}{Jan 2024 -- Present}{Gurugram, India}
+\entry{SalarySe (backed by Peak XV and Pravega)}{Software Engineer, Founding Team (PPO)}{Jan 2024 -- Present}{Gurugram, India}
 
-\proj{SalarySe UPI}{}
+\proj{Product}{}
 \begin{bullets}
-  \item Owned backend APIs for UPI onboarding - device binding, bank-account linking, and VPA creation and implemented post-onboarding amount limits plus device/account blocks for \textbf{500K users}.
-  \item Built webhook handlers for UPI payment-status updates, keeping transaction records in sync and triggering user notifications across \textbf{100K daily transactions}.
+  \item Built UPI onboarding APIs for device binding, bank-account linking, VPA creation, and post-onboarding controls; enabled secure activation for \textbf{500K users}.
+  \item Built webhook-driven payment-status processing and notifications; kept transaction records synchronized across \textbf{100K daily UPI transactions}.
+  \item Built business-rule engines for loan and credit-card eligibility using \textbf{Experian} bureau reports; supported issuance of \textbf{25K credit cards}.
+  \item Automated bill processing with \textbf{AWS Textract}, \textbf{PDFBox}, and LLM-based extraction and validation; auto-cleared \textbf{80\% of bills} without manual review.
+  \item Built rewards accrual and redemption flows for card and UPI transactions through external bank APIs; disbursed \textbf{INR 50M+} and redeemed \textbf{INR 10M+} in rewards monthly.
 \end{bullets}
 
-\proj{Bill Processing}{}
+\proj{Platform}{}
 \begin{bullets}
-  \item Built a bill-processing pipeline that used \textbf{AWS Textract OCR} and LLMs to extract and validate fields from handwritten and printed bills, with a \textbf{PDFBox}- and LLM-based path for predefined PDF formats; \textbf{auto-cleared 80\% without manual review}.
-\end{bullets}
-
-\proj{Rewards Engine}{}
-\begin{bullets}
-  \item Built rewards disbursement logic for SalarySe credit cards and UPI transactions, disbursing \textbf{INR 50M+ in rewards monthly}; also built redemption flows that let users apply rewards to UPI payments or convert them to cash through external bank APIs, processing \textbf{INR 10M+ in redemptions monthly}.
-\end{bullets}
-
-\proj{Homepage Aggregator}{\writeup{https://aayushmiglani.github.io/posts/backend-for-frontend-aggregation/}}
-\begin{bullets}
-  \item Reworked the app's home-screen API to fetch data from \textbf{8 services} in parallel, handling \textbf{42K requests/hour} while \textbf{cutting p95 load time from 500ms to 75ms}; unaffected sections remained available when a downstream service failed.
-\end{bullets}
-
-\proj{CSV Ingestion}{\writeup{https://aayushmiglani.github.io/posts/batch-bulk-ingestion-spring-jpa/}}
-\begin{bullets}
-  \item Reduced database write operations for bulk credit-bureau CSV ingestion from \textbf{70M individual inserts to 25K batches} using streaming parsing, JDBC batching, and cached sequence allocation, eliminating CPU spikes on a shared database instance.
-\end{bullets}
-
-\proj{Distributed Tracing}{\writeup{https://aayushmiglani.github.io/posts/correlation-id-spring-boot/}}
-\begin{bullets}
-  \item Added end-to-end request tracing across \textbf{11+ services}, carrying correlation IDs from the API gateway through synchronous and asynchronous calls so errors could be traced in logs and Sentry.
+  \item Built an authentication and access-control system for the SalarySe app and partner dashboard using Redis, JWTs, and RSA-signed tokens; used scopes and partner attributes to restrict each partner to its permitted APIs and data.
+  \item Re-architected the home-screen API to fan out to \textbf{8 services} in parallel with partial-failure isolation; cut p95 load time from \textbf{500ms to 75ms} across \textbf{42K requests/hour}.
+  \item Optimized bulk credit-bureau ingestion with streaming parsing, JDBC batching, and cached sequence allocation; reduced database writes from \textbf{70M inserts to 25K batches} and eliminated shared-database CPU spikes.
+  \item Introduced correlation-ID propagation across \textbf{11+ services} and asynchronous calls using gateway filters and MDC logging; made production errors traceable end-to-end in logs and Sentry.
 \end{bullets}
 
 \vspace{3pt}
 \entry{BITS Pilani, Goa}{Teaching Assistant --- Digital Image Processing}{Aug 2023 -- Dec 2023}{Goa, India}
 \begin{bullets}
-  \item Mentored 60+ students; supported evaluation, lab sessions, and invigilation.
+  \item Conducted MATLAB sessions for \textbf{60 students} in Digital Image Processing, using hands-on exercises to reinforce course concepts.
+  \item Administered, invigilated, and evaluated \textbf{3 quizzes} with the instructor, ensuring consistent assessment across the cohort.
 \end{bullets}
 
 \vspace{3pt}
