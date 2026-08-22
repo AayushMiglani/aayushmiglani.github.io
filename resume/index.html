@@ -226,7 +226,7 @@
   @media print {
     @page { size: A4; margin: 14mm 16mm; }
     body {
-      font-size: 9pt;
+      font-size: 10pt;
       line-height: 1.3;
       color: #000;
       background: #fff;
@@ -251,12 +251,12 @@
       padding-bottom: 2pt;
     }
     .role, .project { margin-bottom: 8pt; page-break-inside: avoid; }
-    .role-head .left, .project-head .name, .edu-head .school { font-size: 9.5pt; }
+    .role-head .left, .project-head .name, .edu-head .school { font-size: 10pt; }
     .role-head .right, .project-head .meta, .edu-head .right { color: #000; font-size: 9pt; }
     .role .place { color: #333; font-size: 9pt; margin-bottom: 3pt; }
     .role ul, ul.achievements { padding-left: 16pt; margin-top: 2pt; }
     .role li, ul.achievements li { margin: 1pt 0; line-height: 1.35; }
-    .skills-grid { font-size: 9pt; row-gap: 3pt; }
+    .skills-grid { font-size: 9.5pt; row-gap: 3pt; }
     .skills-grid .label { color: #000; font-size: 8.5pt; }
     .courses { color: #333; font-size: 9pt; }
     .edu-line .gpa { color: #000; }
@@ -283,8 +283,6 @@
     <a href="https://www.linkedin.com/in/aayushmiglani/" target="_blank" rel="noopener">linkedin.com/in/aayushmiglani</a>
     <span class="sep">·</span>
     <a href="https://github.com/AayushMiglani" target="_blank" rel="noopener">github.com/AayushMiglani</a>
-    <span class="sep">·</span>
-    <a href="https://aayushmiglani.github.io/" target="_blank" rel="noopener">aayushmiglani.github.io</a>
   </p>
 </header>
 
@@ -301,7 +299,6 @@
       <div class="project-head"><span class="name">Product</span></div>
       <ul>
         <li>Sole backend engineer for <strong>UPI Circle</strong>, shipping both fully and partially delegated payments; finished first among <strong>21 participating apps</strong> and was the only app to build both modes, earning a spot in NPCI's <strong>six-app showcase at GFF 2024</strong>.</li>
-        <li>Built UPI onboarding APIs for device binding, bank-account linking, VPA creation, and post-onboarding controls; enabled secure activation for <strong>500K users</strong>.</li>
         <li>Built webhook-driven payment-status processing and notifications; kept transaction records synchronized across <strong>100K daily UPI transactions</strong>.</li>
         <li>Built business-rule engines for loan and credit-card eligibility using <strong>Experian</strong> bureau reports; supported issuance of <strong>25K credit cards</strong>.</li>
         <li>Automated bill processing with <strong>AWS Textract</strong>, <strong>PDFBox</strong>, and LLM-based extraction and validation; auto-cleared <strong>80% of bills</strong> without manual review.</li>
@@ -314,7 +311,6 @@
         <li>Built an authentication and access-control system for the SalarySe app and partner dashboard using Redis, JWTs, and RSA-signed tokens; used scopes and partner attributes to restrict each partner to its permitted APIs and data.</li>
         <li>Re-architected the home-screen API to fan out to <strong>8 services</strong> in parallel with partial-failure isolation; cut p95 load time from <strong>500ms to 75ms</strong> across <strong>42K requests/hour</strong>.</li>
         <li>Optimized bulk credit-bureau ingestion with streaming parsing, JDBC batching, and cached sequence allocation; reduced database writes from <strong>70M inserts to 25K batches</strong> and eliminated shared-database CPU spikes.</li>
-        <li>Introduced correlation-ID propagation across <strong>11+ services</strong> and asynchronous calls using gateway filters and MDC logging; made production errors traceable end-to-end in logs and Sentry.</li>
       </ul>
     </div>
   </div>
