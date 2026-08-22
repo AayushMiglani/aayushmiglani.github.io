@@ -35,16 +35,18 @@
 
 % ---- small writeup link icon used in project headers ----
 \newcommand{\writeup}[1]{{\footnotesize\href{#1}{writeup~$\nearrow$}}}
+\newcommand{\source}[1]{{\footnotesize\href{#1}{source~$\nearrow$}}}
 
 % ---- tight bullet list ----
 \newenvironment{bullets}{\begin{itemize}[leftmargin=12pt,itemsep=1.5pt,topsep=1pt,parsep=0pt]}{\end{itemize}}
 
 \begin{document}
 \pagestyle{empty}
+\fontsize{9}{10.4}\selectfont
 
 %---------------------------------------------------------------- HEADER
 \name{AAYUSH}
-\contact{Gurugram, India $\cdot$ \href{mailto:aayush8223@gmail.com}{aayush8223@gmail.com} $\cdot$ \href{https://www.linkedin.com/in/aayushmiglani/}{linkedin.com/in/aayushmiglani} $\cdot$ \href{https://github.com/aayushmiglani}{github.com/aayushmiglani} $\cdot$ \href{https://aayushmiglani.github.io/}{aayushmiglani.github.io}}
+\contact{Gurugram, India $\cdot$ \href{tel:+917497845604}{+91-7497845604} $\cdot$ \href{mailto:aayush8223@gmail.com}{aayush8223@gmail.com} $\cdot$ \href{https://www.linkedin.com/in/aayushmiglani/}{linkedin.com/in/aayushmiglani} $\cdot$ \href{https://github.com/aayushmiglani}{github.com/aayushmiglani} $\cdot$ \href{https://aayushmiglani.github.io/}{aayushmiglani.github.io}}
 
 %---------------------------------------------------------------- EXPERIENCE
 \section{Experience}
@@ -52,6 +54,7 @@
 
 \proj{Product}{}
 \begin{bullets}
+  \item Sole backend engineer for \textbf{UPI Circle}, shipping both fully and partially delegated payments; finished first among \textbf{21 participating apps} and was the only app to build both modes, earning a spot in NPCI's \textbf{six-app showcase at GFF 2024}.
   \item Built UPI onboarding APIs for device binding, bank-account linking, VPA creation, and post-onboarding controls; enabled secure activation for \textbf{500K users}.
   \item Built webhook-driven payment-status processing and notifications; kept transaction records synchronized across \textbf{100K daily UPI transactions}.
   \item Built business-rule engines for loan and credit-card eligibility using \textbf{Experian} bureau reports; supported issuance of \textbf{25K credit cards}.
@@ -78,6 +81,13 @@
 \entry{Swecha (NGO)}{Web Development Intern}{May 2022 -- Jul 2022}{Remote}
 \begin{bullets}
   \item Built a live video-streaming and chat platform in \textbf{Elixir / Phoenix}, using Phoenix Channels over WebSockets for low-latency classroom interactions.
+\end{bullets}
+
+%---------------------------------------------------------------- PROJECTS
+\section{Projects}
+\proj{Correlation ID Spring Boot Starter}{\source{https://github.com/AayushMiglani/correlation-id-spring-boot} $\cdot$ \writeup{https://aayushmiglani.github.io/posts/correlation-id-spring-boot/}}
+\begin{bullets}
+  \item Spring Boot starter for validated request correlation across Spring MVC, async executors, scheduled jobs, and OpenFeign, with configurable headers and MDC integration.
 \end{bullets}
 
 %---------------------------------------------------------------- SKILLS
