@@ -140,12 +140,11 @@
     </p>
   </li>
   <li>
-    <a class="title" href="/posts/batch-bulk-ingestion-spring-jpa/">From 70 Million Inserts to 25 Thousand: Batching Bulk Ingestion in Spring Boot</a>
-    <div class="meta">12 min read · Spring Boot · JPA / Hibernate · PostgreSQL · Performance</div>
+    <a class="title" href="/posts/batch-bulk-ingestion-spring-jpa/">Why Spring Data saveAll() Still Inserted One Row at a Time</a>
+    <div class="meta">10 min read · Spring Boot · JPA / Hibernate · PostgreSQL · Performance</div>
     <p class="summary">
-      How to ingest millions of CSV rows from object storage into PostgreSQL without melting a shared
-      database: streaming parse, bounded batches, the 65,535-parameter limit that picks your batch size,
-      cached sequence allocation, and idempotent re-runs.
+      We expected Spring Data's saveAll() to batch a large PostgreSQL import, but the database logs showed
+      one INSERT per row. The missing piece was how Hibernate generated IDs.
     </p>
   </li>
   <li>
